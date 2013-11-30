@@ -1,18 +1,14 @@
 package world
 
-import(
-	"cryptobact/engine/bact"
-	"cryptobact/engine/food"
-	"cryptobact/engine/acid"
-	"cryptobact/engine/clot"
-)
+import . "cryptobact/evo/population"
+import . "cryptobact/engine/food"
+import . "cryptobact/engine/acid"
+import . "cryptobact/engine/clot"
 
-const(
-	FOOD_TICKS = 50
-)
+const FOOD_TICKS = 50
 
 type World struct {
-	Bacts []Bact
+	MyPopulation *Population
 	Food []Food
 	Acid []Acid
 	Clot []Clot

@@ -47,8 +47,5 @@ func (p *Population) Fuck(a *Bacteria, b *Bacteria) *Bacteria {
     }
 
     // @TBD mining here
-    new_bact := &Bacteria{Chromosome: &Chromosome{DNA: new_dna}}
-    p.Bacts = append(p.Bacts, new_bact)
-
-    return new_bact
+    return &Bacteria{Chromosome: &Chromosome{DNA: new_dna}}
 }

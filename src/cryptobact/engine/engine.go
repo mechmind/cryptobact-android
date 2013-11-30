@@ -1,21 +1,18 @@
 package engine
 
-import(
-	"cryptobact/engine/api"
-	"cryptobact/engine/bact"
-	"cryptobact/engine/food"
-	"cryptobact/engine/acid"
-	"cryptobact/engine/clot"
-	"cryptobact/engine/world"
-	"cryptobact/engine/grid"
-)
+import . "cryptobact/evo/bacteria"
+import . "cryptobact/engine/food"
+import . "cryptobact/engine/acid"
+import . "cryptobact/engine/clot"
+import . "cryptobact/engine/world"
+import . "cryptobact/engine/grid"
 
 func Loop() {
 	world := world.World{}
 	grid := grid.Grid{}
-	bacts := api.GetBacts(1)
+    chain := Chain{}
 
-	world.bacts = bacts
+	world.MyPopulation = NewPopulation(chain)
 
 	// FIXME infinite loop goes here
 	tick := 0
@@ -24,8 +21,7 @@ func Loop() {
 		grid.CalcWeights(&world)
 	}
 
-	for i := range world.bacts {
-		bact = world.bacts[i]
+	for _, bact := range world.MyPopulation.Bacts {
 		action := bact.GetAction(grid, world)
 		action.Apply(&world)
 	}

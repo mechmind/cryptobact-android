@@ -19,11 +19,11 @@ type updateRequest struct {
 
 func newUpdater(r *Render) *Updater {
     return &Updater{make(chan *updateRequest, UPDATER_QUEUE), r, make(chan struct{}),
-        make(chan struct{}))
+        make(chan struct{})}
 }
 
 func (r *Updater) Update(w *engine.World) {
-    req := &updateRequest{w, make(chan struct{}}
+    req := &updateRequest{w, make(chan struct{})}
     select {
     case r.reqs <- req:
         <-req.done

@@ -1,12 +1,9 @@
 package grid
 
-import(
-	"math"
-)
+import "math"
+import . "cryptobact/engine/world"
 
 const(
-	GRID_WIDTH = 20
-	GRID_HEIGHT = 20
 	MIN_WEIGHT = 0.001
 )
 
@@ -16,11 +13,11 @@ type Cell struct {
 	Clot float64
 }
 
-type Grid [GRID_WIDTH][GRID_HEIGHT]Cell
+type Grid [][]Cell
 
 func (g *Grid) CalcWeights(w *World) {
-	for x := range GRID_WIDTH {
-		for y := range GRID_HEIGHT {
+	for x := 0; x < len(g); x++ {
+		for y := 0; y < len(g[x]); y++ {
 			c := Cell{}
 			for i := range w.Food {
 				c.Food += GetWeight(

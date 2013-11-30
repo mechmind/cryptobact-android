@@ -1,72 +1,94 @@
 package bact
 
+import "math/rand"
 import . "cryptobact/evo/bacteria"
 import . "cryptobact/engine/grid"
 import . "cryptobact/engine/world"
 
-//type Bact struct{
-//    Owner int
-//    X float64
-//    Y float64
-//    Speed float64
-//    Food float64
-//    Acid float64
-//    Clot float64
-//    Attack float64
-//    Fuck float64
-//    Ttl int
-//    Energy int
-//}
-
 type Action interface {
-	Apply(w *World)
+	Apply(b *Bact, w *World)
 }
 
 type ActionMove struct {
-	Subject Bact
 	X float64
 	Y float64
+	Angle int
 }
 
-func (a ActionMove) Apply(world *World) {
-	return
+func (a ActionMove) Apply(b *Bact, w *World) {
+	b.X = a.X
+	b.Y = a.Y
+	b.Angle = a.Angle
 }
 
 type ActionAttack struct {
-	Subject Bact
-	Object Bact
+	Object *Bact
+	Damage int
 }
 
-func (a ActionAttack) Apply(world *World) {
-	return
+func (a ActionAttack) Apply(b *Bact, w *World) {
+	a.Object.Energy -= a.Damage
 }
 
 type ActionEat struct {
-	Subject Bact
-	Object Food
+	Object *Food
 }
 
-func (a ActionEat) Apply(world *World) {
-	return
+func (a ActionEat) Apply(b *Bact, w *World) {
+	a.Object.Eaten = true
 }
 
 type ActionFuck struct {
-	Subject Bact
-	Object Food
+	Object *Bact
 }
 
-func (a ActionFuck) Apply(world *World) {
+func (a ActionFuck) Apply(b *Bact, w *World) {
+	// FIXME implement
+	//child := w.MyPopulation.Fuck(b, a.Object)
+	//a_nrg := w.MyPopulation.GetGenome(a.Object)
+	//b_nrg := w.MyPopulation.GetGenome(b)
 	return
 }
 
 type ActionDie struct {
-	Subject Bact
 }
 
-func (a ActionDie) Apply(world *World) {
-	return
+func (a ActionDie) Apply(b *Bact, w *World) {
+	w.MyPopulation.Kill(b)
 }
 
-func GetAction(grid Grid, world World) Action {
-	return Action{}
+func GetAction(bact *Bacteria, grid *Grid, world *World) Action {
+	// FIXME rewrite without random
+	Action.Bact = bact
+	actions := []string{"move", "attack", "eat", "fuck", "die"}
+
+	if bact.TTL == 0 {
+		return ActionDie{}
+	}
+
+	if (rand.Intn(10) == 5) {
+		for k, b := range world.MyPopulation {
+			if b.Energy > 0 {
+				return ActionAttack{b, 30}
+			}
+		}
+	}
+
+	if (rand.Intn(10) == 5) {
+		for k, f := range world.Food {
+			if f.Eaten == false {
+				return ActionEat(f)
+			}
+		}
+	}
+
+	x := (rand.Float64() * 2) - 1
+	y := (rand.Float64() * 2) - 1
+	for ((x + bact.X) < 0 || (y + bact.Y) < 0 || (x + bact.X) > world.Width ||
+		(y + bact.Y) > world.Height) {
+		x := (rand.Float64() * 2) - 1
+		y := (rand.Float64() * 2) - 1
+	}
+
+	return ActionMove{x, y, 0}
 }

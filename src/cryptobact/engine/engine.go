@@ -1,49 +1,64 @@
 package engine
 
-import . "cryptobact/evo/bacteria"
-import . "cryptobact/engine/food"
-import . "cryptobact/engine/acid"
-import . "cryptobact/engine/clot"
-import . "cryptobact/engine/world"
-import . "cryptobact/engine/grid"
-import . "cryptobact/engine/action"
+import "runtime"
+import "fmt"
+
+import "cryptobact/evo"
 
 const(
-	WIDTH = 16
-	HEIGHT = 24
+    WIDTH = 16
+    HEIGHT = 24
 )
 
 type Updater interface {
-	Update()
+    Update()
 }
 
 func Loop(updater Updater) {
-	world := world.World{}
-	chain := Chain{}
+    runtime.GOMAXPROCS(2)
 
-	grid := make(Grid, WIDTH)
-	for x := 0; x < WIDTH; x++ {
-		grid[x] = make([]Cell, HEIGHT)
-	}
+    miner := evo.NewMiner(146)
+    miner.Start()
 
-	world.Width = WIDTH
-	world.Height = HEIGHT
-	world.MyPopulation = NewPopulation(chain)
+    chain := &evo.Chromochain{}
 
-	// FIXME infinite loop goes here
-	tick := 0
-	if world.ShouldSpawnFood(tick) {
-		world.SpawnFood()
-		grid.CalcWeights(&world)
-	}
+    world := &World{}
 
-	for _, bact := range world.MyPopulation.GetBacts() {
-		a := action.GetAction(bact, &grid, &world)
-		a.Apply(&world)
-	}
+    options := &evo.PopulationOptions{
+        Attitudes: map[string]*evo.Attitude{
+            "lust": &evo.Attitude{"111.1", 4},
+            "glut": &evo.Attitude{"10101", 2},
+        },
+        MutateProbability: 0.5,
+        MutateRate: 1,
+        RecombinationChance: 1.0,
+        RecombinationDrop: 10,
+    }
 
-	// FIXME call world.CleanFood()
-	// FIXME call updater.Update(&world)
+    grid := make(Grid, WIDTH)
+    for x := 0; x < WIDTH; x++ {
+        grid[x] = make([]Cell, HEIGHT)
+    }
 
-	return
+    world.Width = WIDTH
+    world.Height = HEIGHT
+    world.MyPopulation = evo.NewPopulation(miner, chain, options)
+
+    tick := 0
+    for {
+        world.SpawnFood(tick)
+        grid.CalcWeights(world)
+
+        for _, bact := range world.MyPopulation.GetBacts() {
+            a := GetAction(bact, &grid, world)
+            a.Apply(bact, world)
+        }
+
+        world.MyPopulation.CatchNewBorn()
+        fmt.Println(world.MyPopulation.GetBacts())
+        // FIXME call world.CleanFood()
+        // FIXME call updater.Update(&world)
+        //
+        tick += 1
+    }
 }

@@ -1,4 +1,4 @@
-package food
+package engine
 
 type Food struct {
 	X float64

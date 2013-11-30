@@ -1,7 +1,6 @@
-package grid
+package engine
 
 import "math"
-import . "cryptobact/engine/world"
 
 const(
 	MIN_WEIGHT = 0.001
@@ -16,31 +15,31 @@ type Cell struct {
 type Grid [][]Cell
 
 func (g *Grid) CalcWeights(w *World) {
-	for x := 0; x < len(g); x++ {
-		for y := 0; y < len(g[x]); y++ {
+    for x, row := range *g {
+        for y, _ := range row {
 			c := Cell{}
 			for i := range w.Food {
 				c.Food += GetWeight(
 					float64(x),
 					float64(y),
-					w.Food[i].x,
-					w.Food[i].y,
+					w.Food[i].X,
+					w.Food[i].Y,
 				)
 			}
-			for i := range w.acid {
+			for i := range w.Acid {
 				c.Acid += GetWeight(
 					float64(x),
 					float64(y),
-					w.Acid[i].x,
-					w.Acid[i].y,
+					w.Acid[i].X,
+					w.Acid[i].Y,
 				)
 			}
-			for i := range w.clot {
+			for i := range w.Clot {
 				c.Clot += GetWeight(
 					float64(x),
 					float64(y),
-					w.Clot[i].x,
-					w.Clot[i].y,
+					w.Clot[i].X,
+					w.Clot[i].Y,
 				)
 			}
 		}

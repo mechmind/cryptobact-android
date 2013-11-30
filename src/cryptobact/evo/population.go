@@ -89,8 +89,9 @@ func (p *Population) GetAttitude(b *Bacteria, attitude_id string) uint {
         p.Options.Attitudes[attitude_id].Pattern)
 }
 
-func (p *Population) GetGenome(b *Bacteria) []uint {
-    return b.Chromosome.DNA.Genes()
+func (p *Population) GetGene(b *Bacteria, index uint) uint {
+    genes := b.Chromosome.DNA.Genes()
+    return genes[int(index) % len(genes)]
 }
 
 func (p *Population) Kill(target *Bacteria) {
@@ -101,6 +102,8 @@ func (p *Population) Kill(target *Bacteria) {
             alive = append(alive, b)
         }
     }
+
+    p.bacts = alive
 }
 
 func (p *Population) CatchNewBorn() bool {

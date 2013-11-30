@@ -1,4 +1,4 @@
-package clot
+package engine
 
 type Clot struct {
 	X float64

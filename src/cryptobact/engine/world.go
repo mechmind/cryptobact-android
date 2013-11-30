@@ -1,10 +1,7 @@
-package world
+package engine
 
 import "math/rand"
-import . "cryptobact/evo/population"
-import . "cryptobact/engine/food"
-import . "cryptobact/engine/acid"
-import . "cryptobact/engine/clot"
+import "cryptobact/evo"
 
 const (
 	FOOD_TICKS = 50
@@ -12,7 +9,7 @@ const (
 )
 
 type World struct {
-	MyPopulation *Population
+	MyPopulation *evo.Population
 	Food []*Food
 	Acid []*Acid
 	Clot []*Clot

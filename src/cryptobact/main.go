@@ -236,11 +236,11 @@ func (game *game) initGL() {
     updateCurrentBuffer(game.verts)
 
     // start engine
-    game.render = newRender(posAttrib)
+    game.render = newRender(C.GLuint(posAttrib))
     game.updater = newUpdater(game.render)
     go game.updater.fetchUpdates()
 
-    go engine.Start(game.updater)
+    go engine.Loop(game.updater)
 }
 
 func (game *game) drawFrame() {

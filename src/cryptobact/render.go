@@ -7,6 +7,7 @@ package main
 #include <GLES2/gl2.h>
 */
 import "C"
+import "unsafe"
 
 const (
     ID_BACTERIA = iota
@@ -27,7 +28,7 @@ var mainSet = []objectSet{
 
 type objectSet struct {
     glBufferId C.GLuint
-    glType C.GLuint
+    glType C.GLenum
     glColor int
     objPattern []C.GLfloat
     vxs []C.GLfloat

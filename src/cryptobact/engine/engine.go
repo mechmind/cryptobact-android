@@ -11,7 +11,7 @@ const(
 )
 
 type Updater interface {
-    Update()
+    Update(*World)
 }
 
 func Loop(updater Updater) {

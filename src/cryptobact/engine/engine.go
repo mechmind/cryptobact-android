@@ -66,7 +66,7 @@ func Loop(updater Updater) {
         //fmt.Println(world.MyPopulation.GetBacts())
         world.CleanFood()
 		world.GetOld()
-        updater.Update(&world)
+        updater.Update(world)
 
 		if tick == 999 {
 			tick = 0

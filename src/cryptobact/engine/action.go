@@ -93,5 +93,5 @@ func GetAction(bact *evo.Bacteria, grid *Grid, world *World) Action {
         y = (rand.Float64() * 2) - 1
 	}
 
-	return ActionMove{x, y, 0}
+	return ActionMove{x + bact.X, y + bact.Y, 0}
 }

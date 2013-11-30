@@ -1,6 +1,7 @@
 package engine
 
 import "runtime"
+import "math/rand"
 //import "fmt"
 
 import "cryptobact/evo"
@@ -45,6 +46,8 @@ func Loop(updater Updater) {
     world.MyPopulation = evo.NewPopulation(miner, chain, options)
 
 	for _, b := range world.MyPopulation.GetBacts() {
+		b.X = rand.Float64() * float64(world.Width)
+		b.Y = rand.Float64() * float64(world.Height)
 		b.TTL = int(10000 * float64(world.MyPopulation.GetGene(b, 7)) / 10)
 		b.Energy = 1000 * float64(world.MyPopulation.GetGene(b, 11)) / 10
 	}
@@ -63,8 +66,12 @@ func Loop(updater Updater) {
         //fmt.Println(world.MyPopulation.GetBacts())
         world.CleanFood()
 		world.GetOld()
-        // FIXME call updater.Update(&world)
+        updater.Update(&world)
 
-        tick += 1
+		if tick == 999 {
+			tick = 0
+		} else {
+			tick += 1
+		}
     }
 }

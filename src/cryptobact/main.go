@@ -14,10 +14,10 @@ void set_ortho_proj(GLfloat *matrix, GLfloat left, GLfloat right,
 import "C"
 
 import (
+	"cryptobact/engine"
 	"fmt"
 	"log"
 	"math"
-	"math/rand"
 	"runtime"
 	"sync"
 	"unsafe"
@@ -29,11 +29,9 @@ const (
     Y_COUNT = 24
 
     STEP = 25.0
-    SQ_TIME_STEP = 1.0
 )
 
 var time float64
-var nextSQ float64
 
 type game struct {
 	prog                C.GLuint
@@ -50,11 +48,12 @@ type game struct {
 	touchX, touchY   float32
 
     // buffer ids
-    gridBufId, contentBufId C.GLuint
+    gridBufId C.GLuint
 
-    totalVerts int
     verts []C.GLfloat
-    squares []Square
+
+    updater *Updater
+    render *Render
 }
 
 var g game
@@ -80,7 +79,6 @@ const fragShaderSrcDef = `
 `
 
 func main() {
-    go runServer()
 	runtime.GOMAXPROCS(2)
 }
 
@@ -190,29 +188,10 @@ func GetString(name C.GLenum) string {
 	return C.GoString((*C.char)(unsafe.Pointer(val)))
 }
 
-func (g *game) updateCurrentBuffer(verts []C.GLfloat) {
+func updateCurrentBuffer(verts []C.GLfloat) {
 	C.glBufferData(C.GL_ARRAY_BUFFER,
         C.GLsizeiptr(len(verts)*int(unsafe.Sizeof(verts[0]))),
         unsafe.Pointer(&verts[0]), C.GL_STATIC_DRAW)
-}
-
-func (g *game) updateSquaresBuffer() {
-    var verts = make([]C.GLfloat, len(g.squares) * 6)
-    for id, sq := range g.squares {
-        coords := sq.Coords()
-        vid := id * 6
-        copy(verts[vid:], coords)
-        //log.Println("coords for", id, "are", coords)
-    }
-
-	C.glBindBuffer(C.GL_ARRAY_BUFFER, g.contentBufId)
-    g.updateCurrentBuffer(verts)
-}
-
-func (g *game) addSquare() {
-    idx := rand.Intn(X_COUNT * Y_COUNT)
-    size := (0.2 + rand.Float32() * 0.8) * STEP / 2
-    g.squares = append(g.squares, Square{idx, size})
 }
 
 
@@ -251,45 +230,44 @@ func (game *game) initGL() {
 
 	game.gridBufId = GenBuffer()
 	checkGLError()
-    game.contentBufId = GenBuffer()
-	checkGLError()
     // set up grid buffer
     game.verts = makeGridPoints(X_COUNT * STEP, Y_COUNT * STEP, STEP)
     C.glBindBuffer(C.GL_ARRAY_BUFFER, game.gridBufId)
-    game.updateCurrentBuffer(game.verts)
+    updateCurrentBuffer(game.verts)
 
+    // start engine
+    game.render = newRender(posAttrib)
+    game.updater = newUpdater(game.render)
+    go game.updater.fetchUpdates()
+
+    go engine.Start(game.updater)
 }
 
 func (game *game) drawFrame() {
 	time += .05
 	color := (C.GLclampf(math.Sin(time)) + 1) * .5
 
-    if time > nextSQ {
-        // add another square
-        game.addSquare()
-        game.updateSquaresBuffer()
-        nextSQ += SQ_TIME_STEP
-    }
 	game.mu.Lock()
 	offX := game.offsetX
 	offY := game.offsetY
 	game.mu.Unlock()
+    // basic stuff
 	C.glUniform2f(C.GLint(game.offsetUni), C.GLfloat(offX), C.GLfloat(offY))
 	C.glUniform3f(C.GLint(game.colorUni), 1.0, C.GLfloat(color), 0)
     C.glUniformMatrix4fv(C.GLint(game.mvpUni), 1, C.GL_FALSE,
         (*C.GLfloat)(unsafe.Pointer(&game.mvp[0])))
 	C.glClear(C.GL_COLOR_BUFFER_BIT | C.GL_DEPTH_BUFFER_BIT)
-
 	C.glUseProgram(game.prog)
+    // grid
     C.glBindBuffer(C.GL_ARRAY_BUFFER, game.gridBufId)
 	C.glVertexAttribPointer(game.posAttr, 2, C.GL_FLOAT, C.GL_FALSE, 0, unsafe.Pointer(uintptr(0)))
     C.glDrawArrays(C.GL_LINES, 0, (C.GLsizei)(len(game.verts)))
-    if len(game.squares) > 0 {
-        C.glBindBuffer(C.GL_ARRAY_BUFFER, game.contentBufId)
-        C.glVertexAttribPointer(game.posAttr, 2, C.GL_FLOAT, C.GL_FALSE, 0, unsafe.Pointer(uintptr(0)))
-        //C.glDrawArrays(C.GL_TRIANGLES, 0, 6)
-        C.glDrawArrays(C.GL_TRIANGLES, 0, (C.GLsizei)(len(game.squares) * 3))
+    // world
+    if game.updater.isWorldUpdated() {
+        // apply bb to render
+        game.render.SwapBB()
     }
+    game.render.RenderAll()
 }
 
 func (game *game) onTouch(action int, x, y float32) {

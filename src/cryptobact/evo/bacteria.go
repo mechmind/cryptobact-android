@@ -7,4 +7,5 @@ type Bacteria struct {
     X float64
     Y float64
     Direction float64
+    Born bool
 }

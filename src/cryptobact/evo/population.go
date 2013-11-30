@@ -1,10 +1,15 @@
 package evo
 
+import "fmt"
 import "math/rand"
+
+var _ = fmt.Print
 
 type Population struct {
     // @TODO author
     Options *PopulationOptions
+
+    Miner *Miner
 
     bacts []*Bacteria
 }
@@ -30,7 +35,8 @@ type Attitude struct {
     Max uint
 }
 
-func NewPopulation(chain *Chromochain, options *PopulationOptions) *Population {
+func NewPopulation(miner *Miner, chain *Chromochain,
+        options *PopulationOptions) *Population {
     if options == nil {
         options = DefaultPopulationOptions
     }
@@ -38,10 +44,10 @@ func NewPopulation(chain *Chromochain, options *PopulationOptions) *Population {
     bacts := make([]*Bacteria, 0)
     chromos := chain.GetLastChromosomes()
     for _, c := range chromos {
-        bacts = append(bacts, &Bacteria{Chromosome: c})
+        bacts = append(bacts, &Bacteria{Chromosome: c, Born: true})
     }
 
-    return &Population{bacts: bacts, Options: options}
+    return &Population{bacts: bacts, Options: options, Miner: miner}
 }
 
 func (p *Population) Fuck(a *Bacteria, b *Bacteria) *Bacteria {
@@ -62,8 +68,12 @@ func (p *Population) Fuck(a *Bacteria, b *Bacteria) *Bacteria {
         }
     }
 
-    // @TBD mining here
-    new_bacteria := &Bacteria{Chromosome: &Chromosome{DNA: new_dna}}
+    new_bacteria := &Bacteria{
+        Chromosome: &Chromosome{DNA: new_dna},
+        Born: false}
+
+    // mining here!
+    p.Miner.Mine(new_bacteria.Chromosome)
 
     p.bacts = append(p.bacts, new_bacteria)
 
@@ -83,17 +93,26 @@ func (p *Population) GetGenome(b *Bacteria) []uint {
     return b.Chromosome.DNA.Genes()
 }
 
-func (p *Population) Clean() []*Bacteria {
-    corpses := make([]*Bacteria, 0)
+func (p *Population) Kill(target *Bacteria) {
     alive := make([]*Bacteria, 0)
 
     for _, b := range p.bacts {
-        if b.Energy <= 0 {
-            corpses = append(corpses, b)
-        } else {
+        if b != target {
             alive = append(alive, b)
         }
     }
+}
 
-    return corpses
+func (p *Population) CatchNewBorn() bool {
+    newborn := p.Miner.Extract()
+    if newborn != nil {
+        for _, b := range p.bacts {
+            if b.Chromosome == newborn {
+                b.Born = true
+                return true
+            }
+        }
+    }
+
+    return false
 }

@@ -6,8 +6,7 @@ import(
 )
 
 func main() {
-	m := engine.GetMap()
-	for i := range m {
-		log.Println(m[i])
-	}
+	log.Println("testing engine")
+	engine.Loop()
+	log.Println("done")
 }

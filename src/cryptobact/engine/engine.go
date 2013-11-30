@@ -1,77 +1,36 @@
 package engine
 
 import(
-	/*"log"*/
-	"math"
+	"cryptobact/engine/api"
+	"cryptobact/engine/bact"
+	"cryptobact/engine/food"
+	"cryptobact/engine/acid"
+	"cryptobact/engine/clot"
+	"cryptobact/engine/world"
+	"cryptobact/engine/grid"
 )
 
-const(
-	GRID_WIDTH = 20
-	GRID_HEIGHT = 20
-	TIME_DELTA = 0.001
-)
+func Loop() {
+	world := world.World{}
+	grid := grid.Grid{}
+	bacts := api.GetBacts(1)
 
-type Cell struct {
-	acid float64
-	clot float64
-	food float64
-}
+	world.bacts = bacts
 
-type Grid [GRID_WIDTH][GRID_HEIGHT]Cell
-
-type Modifier struct {
-	x float64
-	y float64
-	t string
-}
-
-type Modifiers []Modifier
-
-func GetMap() Grid {
-	var g Grid
-
-	var mods []Modifier
-	mods = append(mods, Modifier{0.0, 0.0, "acid"})
-	mods = append(mods, Modifier{10.0, 10.0, "acid"})
-	mods = append(mods, Modifier{19.0, 19.0, "clot"})
-	mods = append(mods, Modifier{10.0, 10.0, "food"})
-
-	g.ApplyModifiers(mods)
-
-	return g
-}
-
-func GetModifierWeight(
-	x_self float64, y_self float64, x_mod float64, y_mod float64) float64 {
-	x_diff := x_mod - x_self
-	y_diff := y_mod - y_self
-	result := 1 / (math.Pow(x_diff, 2) + math.Pow(y_diff, 2) + 1)
-
-	if result < 0.001 {
-		return 0
+	// FIXME infinite loop goes here
+	tick := 0
+	if world.ShouldSpawnFood(tick) {
+		world.SpawnFood()
+		grid.CalcWeights(&world)
 	}
 
-	return result
-}
-
-func (g *Grid) ApplyModifiers(mods Modifiers) {
-	for x := 0; x < GRID_WIDTH; x++ {
-		for y := 0; y < GRID_HEIGHT; y++ {
-			c := Cell{0, 0, 0}
-			for i := range mods {
-				switch mods[i].t {
-					case "acid":
-						c.acid += GetModifierWeight(
-							float64(x), float64(y), mods[i].x, mods[i].y)
-					case "clot":
-						c.clot += GetModifierWeight(
-							float64(x), float64(y), mods[i].x, mods[i].y)
-					case "food":
-						c.food += GetModifierWeight(
-							float64(x), float64(y), mods[i].x, mods[i].y)
-				}
-			}
-			g[x][y] = c
-		}
+	for i := range world.bacts {
+		bact = world.bacts[i]
+		action := bact.GetAction(grid, world)
+		action.Apply(&world)
 	}
+
+	// FIXME call render.Update()
+
+	return
 }

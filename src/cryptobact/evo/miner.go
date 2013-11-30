@@ -11,8 +11,10 @@ type Miner struct {
     OutChan chan *Chromosome
 }
 
-func NewMiner(difficulty *big.Int) *Miner {
-    return &Miner{Difficulty: difficulty,
+func NewMiner(difficulty uint) *Miner {
+    threshold := big.NewInt(1)
+    threshold.Lsh(threshold, difficulty)
+    return &Miner{Difficulty: threshold,
         InChan: make(chan *Chromosome, 256),
         OutChan: make(chan *Chromosome, 256),
     }

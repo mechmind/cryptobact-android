@@ -1,4 +1,4 @@
-package dna
+package evo
 
 import "math"
 import "math/big"

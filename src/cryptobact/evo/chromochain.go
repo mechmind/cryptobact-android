@@ -1,14 +1,10 @@
-package chromochain
+package evo
 
-import . "cryptobact/evo/chromosome"
-import . "cryptobact/evo/dna"
-
-
-type Chain struct {
+type Chromochain struct {
     // @TBD
 }
 
-func (c *Chain) GetLastChromosomes() []*Chromosome {
+func (c *Chromochain) GetLastChromosomes() []*Chromosome {
     // @FIXME hardcode
     chromos := make([]*Chromosome, 0)
     for i := 0; i < 10; i++ {

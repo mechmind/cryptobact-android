@@ -2,28 +2,26 @@ package main
 
 import "fmt"
 import "math/rand"
-import . "cryptobact/evo/dna"
-import . "cryptobact/evo/chromochain"
-import . "cryptobact/evo/population"
+import "cryptobact/evo"
 
 func main() {
-    chain := &Chain{}
-    population := NewPopulation(chain)
-    population.Fuck(population.Bacts[8], population.Bacts[9])
+    chain := &evo.Chromochain{}
+    population := evo.NewPopulation(chain, nil)
+    population.Fuck(population.GetBacts()[8], population.GetBacts()[9])
 
-    for i, bact := range population.Bacts {
+    for i, bact := range population.GetBacts() {
         fmt.Printf("%2d: %s\n", i + 1, bact.Chromosome.DNA)
     }
 }
 
 func test_dna() {
-    dna_a := NewRandDNA(64)
-    dna_b := NewRandDNA(64)
+    dna_a := evo.NewRandDNA(64)
+    dna_b := evo.NewRandDNA(64)
 
     fmt.Println("DNA A", dna_a)
     fmt.Println("DNA B", dna_b)
 
-    dna_c := Crossover(dna_a, dna_b)
+    dna_c := evo.Crossover(dna_a, dna_b)
 
     fmt.Println("CROSSOVER")
     fmt.Println("DNA C", dna_c)

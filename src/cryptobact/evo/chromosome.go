@@ -1,8 +1,6 @@
-package chromosome
+package evo
 
 import "time"
-
-import . "cryptobact/evo/dna"
 
 type DeviceId uint
 type ChromosomeHash uint

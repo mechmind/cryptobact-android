@@ -6,6 +6,10 @@ package main
 #include <android/input.h>
 #include <GLES2/gl2.h>
 #cgo android LDFLAGS: -lGLESv2
+
+void set_ortho_proj(GLfloat *matrix, GLfloat left, GLfloat right,
+        GLfloat bottom, GLfloat top, GLfloat near, GLfloat far);
+
 */
 import "C"
 
@@ -13,33 +17,55 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/rand"
 	"runtime"
 	"sync"
 	"unsafe"
 )
 
+
+const (
+    X_COUNT = 16
+    Y_COUNT = 24
+
+    STEP = 25.0
+    SQ_TIME_STEP = 1.0
+)
+
 var time float64
+var nextSQ float64
 
 type game struct {
 	prog                C.GLuint
 	width, height       int
 	offsetUni, colorUni int
+    posAttr             C.GLuint
+    mvpUni              int
+    mvp                 []C.GLfloat
 
 	mu               sync.Mutex // Protects offsetX, offsetY
 	offsetX, offsetY float32
 
 	touching         bool
 	touchX, touchY   float32
+
+    // buffer ids
+    gridBufId, contentBufId C.GLuint
+
+    totalVerts int
+    verts []C.GLfloat
+    squares []Square
 }
 
 var g game
 
 const vertShaderSrcDef = `
 	uniform vec2 offset;
+    uniform mat4 mvp;
 	attribute vec4 vPosition;
 
 	void main() {
-		gl_Position = vec4(vPosition.xy+offset, vPosition.zw);
+		gl_Position = mvp * vec4(vPosition.xy+offset, vPosition.zw);
 	}
 `
 
@@ -154,7 +180,7 @@ func uniformLocation(prog C.GLuint, name string) int {
 	attrib := int(C.glGetUniformLocation(C.GLuint(prog), (*C.GLchar)(unsafe.Pointer(nameC))))
 	checkGLError()
 	if attrib == -1 {
-		panic(fmt.Errorf("Failed to find attrib position for %v", name))
+        panic(fmt.Errorf("Failed to find attrib position for %v", name))
 	}
 	return attrib
 }
@@ -164,9 +190,41 @@ func GetString(name C.GLenum) string {
 	return C.GoString((*C.char)(unsafe.Pointer(val)))
 }
 
+func (g *game) updateCurrentBuffer(verts []C.GLfloat) {
+	C.glBufferData(C.GL_ARRAY_BUFFER,
+        C.GLsizeiptr(len(verts)*int(unsafe.Sizeof(verts[0]))),
+        unsafe.Pointer(&verts[0]), C.GL_STATIC_DRAW)
+}
+
+func (g *game) updateSquaresBuffer() {
+    var verts = make([]C.GLfloat, len(g.squares) * 6)
+    for id, sq := range g.squares {
+        coords := sq.Coords()
+        vid := id * 6
+        copy(verts[vid:], coords)
+        //log.Println("coords for", id, "are", coords)
+    }
+
+	C.glBindBuffer(C.GL_ARRAY_BUFFER, g.contentBufId)
+    g.updateCurrentBuffer(verts)
+}
+
+func (g *game) addSquare() {
+    idx := rand.Intn(X_COUNT * Y_COUNT)
+    size := (0.2 + rand.Float32() * 0.8) * STEP / 2
+    g.squares = append(g.squares, Square{idx, size})
+}
+
+
 func (game *game) resize(width, height int) {
 	game.width = width
 	game.height = height
+
+    game.offsetX = float32(width - X_COUNT * STEP) / 2.0
+    game.offsetY = float32(height - Y_COUNT * STEP) / 2.0
+
+    C.set_ortho_proj((*C.GLfloat)(unsafe.Pointer(&game.mvp[0])), 0, C.GLfloat(width - 1),
+        0, C.GLfloat(height - 1), 1.0, -1.0)
 	C.glViewport(0, 0, C.GLsizei(width), C.GLsizei(height))
 }
 
@@ -178,35 +236,60 @@ func (game *game) initGL() {
 	C.glEnable(C.GL_CULL_FACE)
 	C.glEnable(C.GL_DEPTH_TEST)
 
+    game.mvp = make([]C.GLfloat, 16)
 	game.prog = createProgram(vertShaderSrcDef, fragShaderSrcDef)
 	posAttrib := attribLocation(game.prog, "vPosition")
+    game.posAttr = C.GLuint(posAttrib)
 	game.offsetUni = uniformLocation(game.prog, "offset")
+    game.mvpUni = uniformLocation(game.prog, "mvp")
 	game.colorUni = uniformLocation(game.prog, "color")
 	C.glUseProgram(game.prog)
 	C.glEnableVertexAttribArray(C.GLuint(posAttrib))
+    // transformation matrix
+    C.glUniformMatrix4fv(C.GLint(game.mvpUni), 1, C.GL_FALSE,
+        (*C.GLfloat)(unsafe.Pointer(&game.mvp[0])))
 
-	vertVBO := GenBuffer()
+	game.gridBufId = GenBuffer()
 	checkGLError()
-	C.glBindBuffer(C.GL_ARRAY_BUFFER, vertVBO)
-	verts := []float32{.0, 0.5, -0.5, -0.5, 0.5, -0.5}
-	C.glBufferData(C.GL_ARRAY_BUFFER, C.GLsizeiptr(len(verts)*int(unsafe.Sizeof(verts[0]))), unsafe.Pointer(&verts[0]), C.GL_STATIC_DRAW)
-	C.glVertexAttribPointer(C.GLuint(posAttrib), 2, C.GL_FLOAT, C.GL_FALSE, 0, unsafe.Pointer(uintptr(0)))
+    game.contentBufId = GenBuffer()
+	checkGLError()
+    // set up grid buffer
+    game.verts = makeGridPoints(X_COUNT * STEP, Y_COUNT * STEP, STEP)
+    C.glBindBuffer(C.GL_ARRAY_BUFFER, game.gridBufId)
+    game.updateCurrentBuffer(game.verts)
+
 }
 
 func (game *game) drawFrame() {
 	time += .05
 	color := (C.GLclampf(math.Sin(time)) + 1) * .5
 
+    if time > nextSQ {
+        // add another square
+        game.addSquare()
+        game.updateSquaresBuffer()
+        nextSQ += SQ_TIME_STEP
+    }
 	game.mu.Lock()
 	offX := game.offsetX
 	offY := game.offsetY
 	game.mu.Unlock()
 	C.glUniform2f(C.GLint(game.offsetUni), C.GLfloat(offX), C.GLfloat(offY))
 	C.glUniform3f(C.GLint(game.colorUni), 1.0, C.GLfloat(color), 0)
+    C.glUniformMatrix4fv(C.GLint(game.mvpUni), 1, C.GL_FALSE,
+        (*C.GLfloat)(unsafe.Pointer(&game.mvp[0])))
 	C.glClear(C.GL_COLOR_BUFFER_BIT | C.GL_DEPTH_BUFFER_BIT)
 
 	C.glUseProgram(game.prog)
-	C.glDrawArrays(C.GL_TRIANGLES, 0, 3)
+    C.glBindBuffer(C.GL_ARRAY_BUFFER, game.gridBufId)
+	C.glVertexAttribPointer(game.posAttr, 2, C.GL_FLOAT, C.GL_FALSE, 0, unsafe.Pointer(uintptr(0)))
+    C.glDrawArrays(C.GL_LINES, 0, (C.GLsizei)(len(game.verts)))
+    if len(game.squares) > 0 {
+        C.glBindBuffer(C.GL_ARRAY_BUFFER, game.contentBufId)
+        C.glVertexAttribPointer(game.posAttr, 2, C.GL_FLOAT, C.GL_FALSE, 0, unsafe.Pointer(uintptr(0)))
+        //C.glDrawArrays(C.GL_TRIANGLES, 0, 6)
+        C.glDrawArrays(C.GL_TRIANGLES, 0, (C.GLsizei)(len(game.squares) * 3))
+    }
 }
 
 func (game *game) onTouch(action int, x, y float32) {
@@ -220,12 +303,27 @@ func (game *game) onTouch(action int, x, y float32) {
 		if !game.touching {
 			break
 		}
-		game.mu.Lock()
-		game.offsetX += 2 * (x - game.touchX) / float32(game.width)
-		game.offsetY += 2 * -(y - game.touchY) / float32(game.height)
-		game.mu.Unlock()
+        // ignore touch, BE UNTOUCHEABLE
+//		game.mu.Lock()
+//		game.offsetX += (x - game.touchX)
+//		game.offsetY += -(y - game.touchY)
+//		game.mu.Unlock()
 		game.touchX, game.touchY = x, y
 	}
+}
+
+func makeGridPoints(llimX, llimY, lstep float32) []C.GLfloat {
+    limX, limY, step := C.GLfloat(llimX), C.GLfloat(llimY), C.GLfloat(lstep)
+    data := make([]C.GLfloat, 0, int(math.Ceil(float64(limX) * float64(limY) / (float64(step) * float64(step)) + 4) * 4))
+
+    var nextX, nextY C.GLfloat
+    for nextX = 0.0 ; nextX < limX + 0.1 ; nextX += step {
+        for nextY = 0.0; nextY < limY + 0.1; nextY += step {
+            data = append(data, nextX, 0.0, nextX, limY)
+            data = append(data, 0.0, nextY, limX, nextY)
+        }
+    }
+    return data
 }
 
 // Use JNI_OnLoad to ensure that the go runtime is initialized at a predictable time,

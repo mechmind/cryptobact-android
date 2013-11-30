@@ -34,7 +34,17 @@ func (w *World) SpawnFood(tick int) {
 func (w *World) CleanFood() {
 	for k, f := range w.Food {
 		if f.Eaten {
-			w.Food = append(w.Food[:k], w.Food[k + 1:]...)
+			if k + 1 >= len(w.Food) {
+				w.Food = w.Food[:k]
+			} else {
+				w.Food = append(w.Food[:k], w.Food[k + 1:]...)
+			}
 		}
+	}
+}
+
+func (w *World) GetOld() {
+	for _, b := range w.MyPopulation.GetBacts() {
+		b.TTL -= int(w.MyPopulation.GetGene(b, 17) / 10.0 + 1)
 	}
 }

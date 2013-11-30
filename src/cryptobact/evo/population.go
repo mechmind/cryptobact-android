@@ -89,9 +89,9 @@ func (p *Population) GetAttitude(b *Bacteria, attitude_id string) uint {
         p.Options.Attitudes[attitude_id].Pattern)
 }
 
-func (p *Population) GetGene(b *Bacteria, index uint) uint {
+func (p *Population) GetGene(b *Bacteria, index uint) float64 {
     genes := b.Chromosome.DNA.Genes()
-    return genes[int(index) % len(genes)]
+    return float64(genes[int(index) % len(genes)])
 }
 
 func (p *Population) Kill(target *Bacteria) {

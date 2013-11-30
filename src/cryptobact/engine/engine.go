@@ -1,7 +1,7 @@
 package engine
 
 import "runtime"
-import "fmt"
+//import "fmt"
 
 import "cryptobact/evo"
 
@@ -44,6 +44,11 @@ func Loop(updater Updater) {
     world.Height = HEIGHT
     world.MyPopulation = evo.NewPopulation(miner, chain, options)
 
+	for _, b := range world.MyPopulation.GetBacts() {
+		b.TTL = int(10000 * float64(world.MyPopulation.GetGene(b, 7)) / 10)
+		b.Energy = 1000 * float64(world.MyPopulation.GetGene(b, 11)) / 10
+	}
+
     tick := 0
     for {
         world.SpawnFood(tick)
@@ -55,10 +60,11 @@ func Loop(updater Updater) {
         }
 
         world.MyPopulation.CatchNewBorn()
-        fmt.Println(world.MyPopulation.GetBacts())
-        // FIXME call world.CleanFood()
+        //fmt.Println(world.MyPopulation.GetBacts())
+        world.CleanFood()
+		world.GetOld()
         // FIXME call updater.Update(&world)
-        //
+
         tick += 1
     }
 }

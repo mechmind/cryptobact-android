@@ -65,7 +65,7 @@ func GetAction(bact *evo.Bacteria, grid *Grid, world *World) Action {
 	// FIXME rewrite without random
 	//actions := []string{"move", "attack", "eat", "fuck", "die"}
 
-	if bact.TTL == 0 {
+	if bact.TTL <= 0 {
 		return ActionDie{}
 	}
 

@@ -4,7 +4,7 @@ import "fmt"
 
 type Bacteria struct {
     Chromosome *Chromosome
-    TTL uint
+    TTL int
     Energy float64
     X float64
     Y float64
@@ -13,8 +13,7 @@ type Bacteria struct {
 }
 
 func (b *Bacteria) String() string {
-    return fmt.Sprintf("%p {%3.2f; %3.2f} E%3.2f TTL%d :: %s [%t]\n",
-        b,
+    return fmt.Sprintf("{%5.2f; %5.2f} E%6.1f TTL%5d :: %s [%t]\n",
         b.X, b.Y,
         b.Energy,
         b.TTL,

@@ -38,7 +38,7 @@ func (ifk *Infektor) Listen() chan *evo.Chromosome {
         go func(sock *net.UDPConn) {
             for {
                 buf := make([]byte, 512)
-                rlen, remote, err := sock.ReadFromUDP(buf)
+                rlen, _, err := sock.ReadFromUDP(buf)
                 if rlen <= 0 || err != nil {
                     continue
                 }

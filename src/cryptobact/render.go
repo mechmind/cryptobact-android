@@ -7,7 +7,6 @@ package main
 #include <GLES2/gl2.h>
 */
 import "C"
-import "log"
 import "unsafe"
 
 const (
@@ -65,7 +64,7 @@ func newRender(posAttr C.GLuint) *Render {
 func (r *Render) UpdateSet(tag int, cx, cy, scale float32) {
     r.sets[tag].vxsBB = append(r.sets[tag].vxsBB,
         renderObject(r.sets[tag].objPattern, cx, cy, scale)...)
-    log.Println("handled update set", tag, "now have", len(r.sets[tag].vxsBB), "vecs")
+    //log.Println("handled update set", tag, "now have", len(r.sets[tag].vxsBB), "vecs")
 }
 
 func (r *Render) SwapBB() {
@@ -84,8 +83,8 @@ func (r *Render) SwapBB() {
 }
 
 func (r *Render) RenderAll() {
-    for id, set := range r.sets {
-        log.Println("set", id, "has", len(set.vxs), "points")
+    for _, set := range r.sets {
+        //log.Println("set", id, "has", len(set.vxs), "points")
         if len(set.vxs) == 0 {
             continue
         }
@@ -104,11 +103,11 @@ func (r *Render) Flush() {
 
 func renderObject(pattern []C.GLfloat, cx, cy, scale float32) []C.GLfloat {
     vexs := make([]C.GLfloat, len(pattern))
-    log.Println("render: coords are", cx, cy)
+    //log.Println("render: coords are", cx, cy)
     for idx := 0; idx < len(pattern); idx += 2 {
         vexs[idx] = C.GLfloat(cx) * STEP + pattern[idx] * C.GLfloat(scale)
         vexs[idx + 1] = C.GLfloat(cy) * STEP + pattern[idx + 1] * C.GLfloat(scale)
     }
-    log.Println("render: resulting coord set is", vexs)
+    //log.Println("render: resulting coord set is", vexs)
     return vexs
 }

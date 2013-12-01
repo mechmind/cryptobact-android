@@ -15,7 +15,6 @@ import "C"
 
 import (
 	"cryptobact/engine"
-	"cryptobact/infektor"
 	"fmt"
 	"log"
 	"math"
@@ -46,16 +45,23 @@ type game struct {
 	mu               sync.Mutex // Protects offsetX, offsetY
 	offsetX, offsetY float32
 
-	touching         bool
-	touchX, touchY   float32
-
     // buffer ids
     gridBufId C.GLuint
+    sliderLinesBufId, sliderTriagsBufId C.GLuint
 
     verts []C.GLfloat
 
     updater *Updater
     render *Render
+
+    sliders []Slider
+    sliderLineBuffer []C.GLfloat
+    sliderTrBuffer []C.GLfloat
+
+    gameScreen *gameScreen
+    presetScreen *presetScreen
+
+    currentScreen UInteractive
 }
 
 var g game
@@ -81,16 +87,16 @@ const fragShaderSrcDef = `
 `
 
 func main() {
-    ik := infektor.NewInfektor([]uint{
-        2345,
-        3456,
-        4567,
-    })
-    ik.Listen()
-    ips := infektor.GetBroadcastAddrs()
-    log.Println("!!! ips: ", ips)
-    ik.TransmitDisease()
 	runtime.GOMAXPROCS(2)
+    g.updater = newUpdater()
+    go g.updater.fetchUpdates()
+    go engine.Loop(g.updater)
+
+    g.sliders = []Slider{
+        Slider{0.5},
+        Slider{0.5},
+        Slider{0.5},
+    }
 }
 
 func GetShaderInfoLog(shader C.GLuint) string {
@@ -207,6 +213,7 @@ func updateCurrentBuffer(verts []C.GLfloat) {
 
 
 func (game *game) resize(width, height int) {
+    log.Println("now resize to ", width, height)
 	game.width = width
 	game.height = height
 
@@ -216,12 +223,12 @@ func (game *game) resize(width, height int) {
     C.set_ortho_proj((*C.GLfloat)(unsafe.Pointer(&game.mvp[0])), 0, C.GLfloat(width - 1),
         0, C.GLfloat(height - 1), 1.0, -1.0)
 	C.glViewport(0, 0, C.GLsizei(width), C.GLsizei(height))
+
+    game.currentScreen.HandleResize(width, height)
 }
 
 func (game *game) initGL() {
-	log.Printf("GL_VERSION: %v GL_RENDERER: %v GL_VENDOR %v\n",
-		GetString(C.GL_VERSION), GetString(C.GL_RENDERER), GetString(C.GL_VENDOR))
-	log.Printf("GL_EXTENSIONS: %v\n", GetString(C.GL_EXTENSIONS))
+    log.Println("initializing gl")
 	C.glClearColor(0.0, 0.0, 0.0, 1.0)
 	C.glEnable(C.GL_CULL_FACE)
 	C.glEnable(C.GL_DEPTH_TEST)
@@ -241,6 +248,10 @@ func (game *game) initGL() {
 
 	game.gridBufId = GenBuffer()
 	checkGLError()
+	game.sliderLinesBufId = GenBuffer()
+	checkGLError()
+	game.sliderTriagsBufId = GenBuffer()
+	checkGLError()
     // set up grid buffer
     game.verts = makeGridPoints(X_COUNT * STEP, Y_COUNT * STEP, STEP)
     C.glBindBuffer(C.GL_ARRAY_BUFFER, game.gridBufId)
@@ -248,10 +259,10 @@ func (game *game) initGL() {
 
     // start engine
     game.render = newRender(C.GLuint(posAttrib))
-    game.updater = newUpdater(game.render)
-    go game.updater.fetchUpdates()
+    game.updater.AttachRender(game.render)
 
-    go engine.Loop(game.updater)
+    game.currentScreen = newHookerScreen()
+    log.Println("screen: now hooker")
 }
 
 func (game *game) drawFrame() {
@@ -269,39 +280,12 @@ func (game *game) drawFrame() {
         (*C.GLfloat)(unsafe.Pointer(&game.mvp[0])))
 	C.glClear(C.GL_COLOR_BUFFER_BIT | C.GL_DEPTH_BUFFER_BIT)
 	C.glUseProgram(game.prog)
-    // grid
-    C.glBindBuffer(C.GL_ARRAY_BUFFER, game.gridBufId)
-	C.glVertexAttribPointer(game.posAttr, 2, C.GL_FLOAT, C.GL_FALSE, 0, unsafe.Pointer(uintptr(0)))
-    C.glDrawArrays(C.GL_POINTS, 0, (C.GLsizei)(len(game.verts)))
-    // world
-    if status := game.updater.isWorldUpdated(); status != nil {
-        // apply bb to render
-        log.Println("applying new map")
-        game.render.SwapBB()
-        status <- struct{}{}
-    }
-    log.Println("rendering map")
-    game.render.RenderAll()
+
+    game.currentScreen.HandleDraw()
 }
 
 func (game *game) onTouch(action int, x, y float32) {
-	switch action {
-	case C.AMOTION_EVENT_ACTION_UP:
-		game.touching = false
-	case C.AMOTION_EVENT_ACTION_DOWN:
-		game.touching = true
-		game.touchX, game.touchY = x, y
-	case C.AMOTION_EVENT_ACTION_MOVE:
-		if !game.touching {
-			break
-		}
-        // ignore touch, BE UNTOUCHEABLE
-//		game.mu.Lock()
-//		game.offsetX += (x - game.touchX)
-//		game.offsetY += -(y - game.touchY)
-//		game.mu.Unlock()
-		game.touchX, game.touchY = x, y
-	}
+    game.currentScreen.HandleTouch(action, x, y)
 }
 
 func makeGridPoints(llimX, llimY, lstep float32) []C.GLfloat {

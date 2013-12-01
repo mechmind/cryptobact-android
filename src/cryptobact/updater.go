@@ -2,7 +2,6 @@ package main
 
 import (
     "cryptobact/engine"
-    "log"
 )
 
 const UPDATER_QUEUE = 1
@@ -19,9 +18,13 @@ type updateRequest struct {
     done chan struct{}
 }
 
-func newUpdater(r *Render) *Updater {
-    return &Updater{make(chan *updateRequest, UPDATER_QUEUE), r, make(chan struct{}),
+func newUpdater() *Updater {
+    return &Updater{make(chan *updateRequest, UPDATER_QUEUE), nil, make(chan struct{}),
         make(chan chan struct{})}
+}
+
+func (r *Updater) AttachRender(rn *Render) {
+    r.render = rn
 }
 
 func (r *Updater) Update(w *engine.World) {
@@ -38,14 +41,19 @@ func (r *Updater) fetchUpdates() {
         select {
         case req := <-r.reqs:
             // update render's bb
-            log.Println("handling world update")
-            r.handleUpdate(req.w)
-            // send ping to main render loop
-            status := make(chan struct{})
-            r.updateReady <- status
-            <-status
-            // send ok to engine
-            req.done <- struct{}{}
+            //log.Println("handling world update")
+            if r.render == nil {
+                // discard update silently
+                req.done <- struct{}{}
+            } else {
+                r.handleUpdate(req.w)
+                // send ping to main render loop
+                status := make(chan struct{})
+                r.updateReady <- status
+                <-status
+                // send ok to engine
+                req.done <- struct{}{}
+            }
         case <- r.done:
             break
         }
@@ -61,7 +69,7 @@ func (r *Updater) handleUpdate(w *engine.World) {
         }
     }
 
-    log.Println("handled", foodCount, "food")
+    //log.Println("handled", foodCount, "food")
 
     var bactCount int
     for _, b := range w.MyPopulation.GetBacts() {
@@ -70,7 +78,7 @@ func (r *Updater) handleUpdate(w *engine.World) {
             bactCount++
         }
     }
-    log.Println("handled", bactCount, "bacts")
+    //log.Println("handled", bactCount, "bacts")
 }
 
 func (r *Updater) isWorldUpdated() chan struct{} {

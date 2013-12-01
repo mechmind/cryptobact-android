@@ -27,6 +27,7 @@ import (
 const (
     X_COUNT = 16
     Y_COUNT = 24
+    CROSS_HALFSIZE = 2
 
     STEP = 25.0
 )
@@ -300,8 +301,8 @@ func makeGridPoints(llimX, llimY, lstep float32) []C.GLfloat {
     var nextX, nextY C.GLfloat
     for nextX = 0.0 ; nextX < limX + 0.1 ; nextX += step {
         for nextY = 0.0; nextY < limY + 0.1; nextY += step {
-            data = append(data, nextX, 0.0, nextX, limY)
-            data = append(data, 0.0, nextY, limX, nextY)
+            data = append(data, nextX - CROSS_HALFSIZE, nextY, nextX + CROSS_HALFSIZE, nextY)
+            data = append(data, nextX, nextY - CROSS_HALFSIZE, nextX, nextY + CROSS_HALFSIZE)
         }
     }
     return data

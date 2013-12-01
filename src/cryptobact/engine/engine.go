@@ -22,6 +22,8 @@ type Updater interface {
 func Loop(updater Updater) {
     runtime.GOMAXPROCS(2)
 
+    rand.Seed(time.Now().UnixNano())
+
     Miner = evo.NewMiner(146)
     Miner.Start()
 

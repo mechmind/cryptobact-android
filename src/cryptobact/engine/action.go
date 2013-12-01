@@ -15,6 +15,8 @@ type Action interface {
 type ActionMove struct {
 	X float64
 	Y float64
+    World *World
+    Population *evo.Population
 	Bact *evo.Bacteria
 }
 
@@ -57,6 +59,12 @@ func (a ActionMove) Apply() {
 			b.Angle -= 360
 		}
 	}
+
+    dx := math.Abs(x - xt) / tc + a.Population.GetGene(a.Bact, 6) / 100.0
+    dy := math.Abs(y - yt) / tc + a.Population.GetGene(a.Bact, 7) / 100.0
+
+    b.X += rand.NormFloat64() * 0.1 + dx
+    b.Y += rand.NormFloat64() * 0.1 + dy
 }
 
 type ActionAttack struct {
@@ -159,5 +167,5 @@ func GetAction(population *evo.Population, bact *evo.Bacteria, grid *Grid,
 	target_x := 1.0
 	target_y := 1.0
 
-	return ActionMove{target_x, target_y, bact}
+	return ActionMove{target_x, target_y, world, population, bact}
 }

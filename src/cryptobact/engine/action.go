@@ -11,9 +11,6 @@ type Action interface {
 type ActionMove struct {
 	X float64
 	Y float64
-	Angle float64
-	World *World
-	Population *evo.Population
 	Bact *evo.Bacteria
 }
 
@@ -100,9 +97,9 @@ func (a ActionFuck) Apply() {
 
     child.X = (a.Object.X + b.X) / 2
     child.Y = (a.Object.Y + b.Y) / 2
-	child.TTL = int(10000 * float64(a.MyPopulation.GetGene(child, 7)) / 10)
-	child.Energy = 1000 * float64(a.MyPopulation.GetGene(child, 11)) / 10
-	child.RotationSpeed = 10.0 + float64(a.MyPopulation.GetGene(child, 4) / 20)
+	child.TTL = int(10000 * float64(a.Population.GetGene(child, 7)) / 10)
+	child.Energy = 1000 * float64(a.Population.GetGene(child, 11)) / 10
+	child.RotationSpeed = 10.0 + float64(a.Population.GetGene(child, 4) / 20)
 
     a.Object.Energy -= b_coeff / b_lust * 4
     b.Energy -= a_coeff / a_lust * 4
@@ -158,5 +155,5 @@ func GetAction(population *evo.Population, bact *evo.Bacteria, grid *Grid,
 	target_x := 1.0
 	target_y := 1.0
 
-	return ActionMove{x + bact.X, y + bact.Y, 0, world, population, bact}
+	return ActionMove{target_x, target_y, bact}
 }

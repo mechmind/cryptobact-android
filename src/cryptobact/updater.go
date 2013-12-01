@@ -1,5 +1,13 @@
 package main
 
+/*
+#include <stdlib.h>
+#include <jni.h>
+#include <android/input.h>
+#include <GLES2/gl2.h>
+*/
+import "C"
+
 import (
     "cryptobact/engine"
 )
@@ -72,15 +80,25 @@ func (r *Updater) handleUpdate(w *engine.World) {
     //log.Println("handled", foodCount, "food")
 
     var bactCount int
-    for _, p := range w.Populations {
+    for pid, p := range w.Populations {
+        r.render.ClearSplat(ID_BACTERIA, pid)
+        r.render.ClearSplat(ID_EGG, pid)
+        var pcolor [3]C.GLfloat
+        if len(colorSet) <= pid {
+            pcolor = defaultColor
+        } else {
+            pcolor = colorSet[pid]
+        }
         for _, b := range p.GetBacts() {
             //if b != nil && b.Born {
             if b != nil {
                 if b.Born {
-                    r.render.UpdateSet(ID_BACTERIA, float32(b.X), float32(b.Y), 1.0)
+                    count := r.render.UpdateSet(ID_BACTERIA, float32(b.X), float32(b.Y), 1.0)
+                    r.render.UpdateSplat(ID_BACTERIA, pid, count, pcolor)
                     bactCount++
                 } else {
-                    r.render.UpdateSet(ID_EGG, float32(b.X), float32(b.Y), 1.0)
+                    count := r.render.UpdateSet(ID_EGG, float32(b.X), float32(b.Y), 1.0)
+                    r.render.UpdateSplat(ID_EGG, pid, count, pcolor)
                 }
             }
         }

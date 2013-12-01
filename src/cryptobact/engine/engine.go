@@ -11,7 +11,7 @@ import "cryptobact/infektor"
 const(
     WIDTH = 16
     HEIGHT = 24
-	FOOD_TICKS = 30
+	FOOD_TICKS = 20
 	FOOD_PER_TICK = 10
 )
 

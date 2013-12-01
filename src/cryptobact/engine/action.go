@@ -6,6 +6,10 @@ import "math"
 import "math/rand"
 import "cryptobact/evo"
 
+const (
+    FOOD_NUTRITION = 6.0
+)
+
 var _ = log.Print
 
 type Action interface {
@@ -60,11 +64,11 @@ func (a ActionMove) Apply() {
 		}
 	}
 
-    dx := (xt - x) / math.Abs(x - xt) * a.Population.GetGene(a.Bact, 6) / 500.0
-    dy := (yt - y) / math.Abs(y - yt) * a.Population.GetGene(a.Bact, 7) / 500.0
+    dx := (xt - x) / math.Abs(x - xt) * a.Population.GetGene(a.Bact, 6) / 300.0
+    dy := (yt - y) / math.Abs(y - yt) * a.Population.GetGene(a.Bact, 7) / 300.0
 
-    b.X += rand.NormFloat64() * 0.1 + dx
-    b.Y += rand.NormFloat64() * 0.1 + dy
+    b.X += rand.NormFloat64() * 0.01 + dx
+    b.Y += rand.NormFloat64() * 0.01 + dy
 }
 
 type ActionAttack struct {
@@ -88,7 +92,7 @@ type ActionEat struct {
 
 func (a ActionEat) Apply() {
     b := a.Bact
-	b.Energy += float64(a.Population.GetGene(b, 12))
+	b.Energy += float64(a.Population.GetGene(b, 12)) * FOOD_NUTRITION
 	a.Object.Eaten = true
 }
 

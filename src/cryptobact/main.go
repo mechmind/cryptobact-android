@@ -31,7 +31,7 @@ const (
     STEP = 25.0
 )
 
-var time float64
+var ticks float64
 
 type game struct {
 	prog                C.GLuint
@@ -244,8 +244,8 @@ func (game *game) initGL() {
 }
 
 func (game *game) drawFrame() {
-	time += .05
-	color := (C.GLclampf(math.Sin(time)) + 1) * .5
+	ticks += .05
+	color := (C.GLclampf(math.Sin(ticks)) + 1) * .5
 
 	game.mu.Lock()
 	offX := game.offsetX
@@ -263,10 +263,13 @@ func (game *game) drawFrame() {
 	C.glVertexAttribPointer(game.posAttr, 2, C.GL_FLOAT, C.GL_FALSE, 0, unsafe.Pointer(uintptr(0)))
     C.glDrawArrays(C.GL_LINES, 0, (C.GLsizei)(len(game.verts)))
     // world
-    if game.updater.isWorldUpdated() {
+    if status := game.updater.isWorldUpdated(); status != nil {
         // apply bb to render
+        log.Println("applying new map")
         game.render.SwapBB()
+        status <- struct{}{}
     }
+    log.Println("rendering map")
     game.render.RenderAll()
 }
 

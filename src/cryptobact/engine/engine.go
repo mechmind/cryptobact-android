@@ -63,7 +63,7 @@ func Loop(updater Updater) {
     InitPopulation(world, world.Populations[0])
 
     infections := infektor.Listen()
-    infektor.Spread(world.Populations[0], 1 * time.Second)
+    infektor.Spread(world.Populations[0], 5 * time.Second)
 
     tick := 0
     for {
@@ -110,7 +110,8 @@ func InitPopulation(world *World, population *evo.Population) {
 }
 
 func ProcessInfections(world *World, infections chan *evo.Chromosome) {
-    for {
+    stop_for := false
+    for !stop_for {
         select {
         case new_chromo := <- infections:
             new_chain := &evo.Chromochain{
@@ -134,7 +135,7 @@ func ProcessInfections(world *World, infections chan *evo.Chromosome) {
             world.Populations = append(world.Populations,
             evo.NewPopulation(Miner, new_chain, nil))
         default:
-            break
+            stop_for = true
         }
     }
 }

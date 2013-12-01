@@ -8,7 +8,11 @@ import "cryptobact/engine"
 type Updater struct {}
 
 func (f Updater) Update(w *engine.World) {
-	return
+    for _, p := range w.Populations {
+        for _, b := range p.GetBacts() {
+            log.Println(b)
+        }
+    }
 }
 
 func main() {

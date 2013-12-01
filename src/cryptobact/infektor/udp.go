@@ -35,12 +35,12 @@ func (ifk *Infektor) Listen() bool {
         go func(sock *net.UDPConn) {
             for {
                 buf := make([]byte, 512)
-                rlen, _, err := sock.ReadFromUDP(buf)
+                rlen, remote, err := sock.ReadFromUDP(buf)
                 if rlen <= 0 || err != nil {
                     continue
                 }
 
-                log.Printf("!!! %s\n", buf)
+                log.Printf("!!! %s: %s\n", remote, buf)
             }
         }(sock)
     }

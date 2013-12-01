@@ -5,14 +5,9 @@ package infektor
 import "fmt"
 import "net"
 import "time"
-//import "log"
-//import "bytes"
-import "encoding/json"
-
-import "cryptobact/evo"
+import "log"
 
 var _ = time.Now
-var _ = fmt.Println
 
 type Infektor struct {
     ports []uint
@@ -90,11 +85,7 @@ func (ifk *Infektor) TransmitDisease(population *evo.Population) bool {
                 continue
             }
 
-
             sock.Write(packet)
-
-            //sock.Write([]byte{'h', 'u', 'i', '\n'})
-            //log.Printf("sent at sock %s:%d\n", a, p)
         }
     }
 

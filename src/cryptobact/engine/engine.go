@@ -69,9 +69,9 @@ func Loop(updater Updater) {
     infections := infektor.Listen()
     infektor.Spread(world.Populations[0], 1 * time.Second)
 
-    tick := 0
+    world.Tick = 0
     for {
-        world.SpawnFood(tick)
+        world.SpawnFood(world.Tick)
         grid.CalcWeights(world)
 
         for _, population := range world.Populations {
@@ -83,10 +83,10 @@ func Loop(updater Updater) {
         world.CleanFood()
         updater.Update(world)
 
-		if tick == 999 {
-			tick = 0
+		if world.Tick == 999 {
+			world.Tick = 0
 		} else {
-			tick += 1
+			world.Tick += 1
 		}
     }
 }

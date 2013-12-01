@@ -60,8 +60,8 @@ func (a ActionMove) Apply() {
 		}
 	}
 
-    dx := (x - xt) / tc + a.Population.GetGene(a.Bact, 6) / 100.0
-    dy := (y - yt) / tc + a.Population.GetGene(a.Bact, 7) / 100.0
+    dx := (x - xt) / math.Abs(x - xt) * a.Population.GetGene(a.Bact, 6) / 500.0
+    dy := (y - yt) / math.Abs(y - yt) * a.Population.GetGene(a.Bact, 7) / 500.0
 
     b.X += rand.NormFloat64() * 0.1 + dx
     b.Y += rand.NormFloat64() * 0.1 + dy
@@ -145,7 +145,7 @@ func GetAction(population *evo.Population, bact *evo.Bacteria, grid *Grid,
 		}
 	}
 
-	if (rand.Intn(10) == 5) {
+	if (rand.Intn(8) == 5) {
 		for _, f := range world.Food {
 			if f.Eaten == false {
 				return ActionEat{f, world, population, bact}
@@ -164,8 +164,10 @@ func GetAction(population *evo.Population, bact *evo.Bacteria, grid *Grid,
 	// FIXME replace with real target
 	//target_x := float64(world.Width) / 2.0
 	//target_y := float64(world.Height) / 2.0
-	target_x := 1.0
-	target_y := 1.0
+    if world.Tick == 3 {
+        bact.TargetX = rand.NormFloat64() * 20
+        bact.TargetY = rand.NormFloat64() * 20
+    }
 
-	return ActionMove{target_x, target_y, world, population, bact}
+	return ActionMove{bact.TargetX, bact.TargetY, world, population, bact}
 }

@@ -12,6 +12,7 @@ type World struct {
 	Height int
 	FoodTicks int
 	FoodPerTick int
+    Tick int
 }
 
 func (w *World) SpawnFood(tick int) {

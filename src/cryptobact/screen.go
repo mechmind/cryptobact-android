@@ -38,6 +38,8 @@ func (t *touchTracker) Update(action int, x, y float32, ofx, ofy C.GLfloat) (x1,
 	switch action {
 	case C.AMOTION_EVENT_ACTION_UP:
 		t.touching = false
+		t.x, t.y = x, y
+        return x, y
 	case C.AMOTION_EVENT_ACTION_DOWN:
 		t.touching = true
 		t.x, t.y = x, y
@@ -49,7 +51,7 @@ func (t *touchTracker) Update(action int, x, y float32, ofx, ofy C.GLfloat) (x1,
 		t.x, t.y = x, y
         return x, y
     }
-    return 0, 0
+    return x, y
 }
 
 type simpleRect struct {
@@ -74,6 +76,7 @@ func (gs *gameScreen) HandleTouch(action int, x, y float32) {
     // open control screen, if clicked in bottom part
 
     rx, ry := gs.t.Update(action, x, y, gs.Screen.offsetX, gs.Screen.offsetY)
+    log.Println("recv coord", x, y, "converted coords:", rx, ry)
 
     if action == C.AMOTION_EVENT_ACTION_UP && gs.bottomRect.In(rx, ry) {
         log.Println("screen: game screen throws to preset")
@@ -119,8 +122,9 @@ func (ps *presetScreen) HandleTouch(action int, x, y float32) {
 //        ps.Screen.offsetY -= C.GLfloat(y - ps.t.y)
 //    }
 
-    x, y = ps.t.Update(action, x, y, ps.Screen.offsetX, ps.Screen.offsetY)
-    if action == C.AMOTION_EVENT_ACTION_UP && ps.bottomRect.In(x, y) {
+    rx, ry := ps.t.Update(action, x, y, ps.Screen.offsetX, ps.Screen.offsetY)
+    log.Println("recv coords", x, y, "converted coords:", rx, ry)
+    if action == C.AMOTION_EVENT_ACTION_UP && ps.bottomRect.In(rx, ry) {
         log.Println("screen: pres screen throws to game")
         g.activateScreen(g.gameScreen)
     } else if action == C.AMOTION_EVENT_ACTION_UP {
@@ -147,7 +151,7 @@ func (ps *presetScreen) HandleDraw() {
     C.glVertexAttribPointer(g.posAttr, 2, C.GL_FLOAT, C.GL_FALSE, 0, unsafe.Pointer(uintptr(0)))
     C.glDrawArrays(C.GL_LINES, 0, (C.GLsizei)(len(g.sliderLineBuffer) / 2))
 
-    log.Println("pres screen: writing lines", g.sliderLineBuffer)
+    //log.Println("pres screen: writing lines", g.sliderLineBuffer)
 
     // triags
     C.glBindBuffer(C.GL_ARRAY_BUFFER, g.sliderTriagsBufId)
@@ -155,7 +159,7 @@ func (ps *presetScreen) HandleDraw() {
     C.glVertexAttribPointer(g.posAttr, 2, C.GL_FLOAT, C.GL_FALSE, 0, unsafe.Pointer(uintptr(0)))
     C.glDrawArrays(C.GL_TRIANGLES, 0, (C.GLsizei)(len(g.sliderTrBuffer) / 2))
 
-    log.Println("pres screen: writing triags", g.sliderTrBuffer)
+    //log.Println("pres screen: writing triags", g.sliderTrBuffer)
 }
 
 

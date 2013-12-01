@@ -2,8 +2,7 @@ package engine
 
 import "runtime"
 import "math/rand"
-import "time"
-import "log"
+import "fmt"
 
 import "cryptobact/evo"
 import "cryptobact/infektor"
@@ -11,6 +10,8 @@ import "cryptobact/infektor"
 const(
     WIDTH = 16
     HEIGHT = 24
+	FOOD_TICKS = 30
+	FOOD_PER_TICK = 10
 )
 
 var Miner *evo.Miner
@@ -49,6 +50,8 @@ func Loop(updater Updater) {
 
     world.Width = WIDTH
     world.Height = HEIGHT
+	world.FoodTicks = FOOD_TICKS
+	world.FoodPerTick = FOOD_PER_TICK
     world.Populations = []*evo.Population{
         evo.NewPopulation(Miner, chain, options),
     }
@@ -65,6 +68,14 @@ func Loop(updater Updater) {
     infections := infektor.Listen()
     infektor.Spread(world.Populations[0], 5 * time.Second)
 
+	for _, b := range world.MyPopulation.GetBacts() {
+		b.X = rand.Float64() * float64(world.Width)
+		b.Y = rand.Float64() * float64(world.Height)
+		b.TTL = int(10000 * float64(world.MyPopulation.GetGene(b, 7)) / 10)
+		b.Energy = 1000 * float64(world.MyPopulation.GetGene(b, 11)) / 10
+		b.RotationSpeed = 10.0 + float64(world.MyPopulation.GetGene(b, 4) / 20)
+	}
+
     tick := 0
     for {
         world.SpawnFood(tick)
@@ -76,7 +87,6 @@ func Loop(updater Updater) {
         }
 
         ProcessInfections(world, infections)
-
         world.CleanFood()
         updater.Update(world)
 

@@ -1,5 +1,6 @@
 package engine
 
+import "math"
 import "math/rand"
 import "cryptobact/evo"
 
@@ -8,19 +9,48 @@ type Action interface {
 }
 
 type ActionMove struct {
-	X float64
-	Y float64
-	Angle float64
-    World *World
-    Population *evo.Population
-    Bact *evo.Bacteria
+	TargetX float64
+	TargetY float64
 }
 
-func (a ActionMove) Apply() {
-    b := a.Bact
-	b.X = a.X
-	b.Y = a.Y
-	b.Angle = a.Angle
+func (a ActionMove) Apply(b *evo.Bacteria, w *World) {
+	alpha := b.Angle
+	xt := a.TargetX
+	yt := a.TargetY
+	x := b.X
+	y := b.Y
+	xz := (math.Cos(alpha)) + x
+	yz := (math.Sin(alpha)) + y
+
+	ta := math.Sqrt(math.Pow((xz - xt), 2) + math.Pow((yz - yt), 2))
+	tb := math.Sqrt(math.Pow((xz - x), 2) + math.Pow((yz - y), 2))
+	tc := math.Sqrt(math.Pow((xt - x), 2) + math.Pow((yt - y), 2))
+
+	cos := ((math.Pow(tb, 2) + math.Pow(tc, 2) - math.Pow(ta, 2)) / (2 * tb * tc))
+	gamma := math.Acos(cos) * 180 / math.Pi
+
+	direction := "ccw"
+	if (math.Cos(xt) - math.Sin(yt)) < 0 {
+		direction = "cw"
+	}
+
+	if gamma < b.RotationSpeed {
+		b.Angle = gamma
+		return
+	}
+
+	if direction == "cw" {
+		b.Angle -= b.RotationSpeed
+
+		if b.Angle < 0 {
+			b.Angle += 360
+		}
+	} else {
+		b.Angle += b.RotationSpeed
+		if b.Angle > 359 {
+			b.Angle -= 360
+		}
+	}
 }
 
 type ActionAttack struct {
@@ -65,8 +95,9 @@ func (a ActionFuck) Apply() {
 
     child.X = (a.Object.X + b.X) / 2
     child.Y = (a.Object.Y + b.Y) / 2
-	child.TTL = int(10000 * float64(a.Population.GetGene(child, 7)) / 10)
-	child.Energy = 1000 * float64(a.Population.GetGene(child, 11)) / 10
+	child.TTL = int(10000 * float64(w.MyPopulation.GetGene(child, 7)) / 10)
+	child.Energy = 1000 * float64(w.MyPopulation.GetGene(child, 11)) / 10
+	child.RotationSpeed = 10.0 + float64(w.MyPopulation.GetGene(child, 4) / 20)
 
     a.Object.Energy -= b_coeff / b_lust * 4
     b.Energy -= a_coeff / a_lust * 4
@@ -116,13 +147,11 @@ func GetAction(population *evo.Population, bact *evo.Bacteria, grid *Grid,
 		}
 	}
 
-	x := (rand.Float64() * 2) - 1
-	y := (rand.Float64() * 2) - 1
-	for ((x + bact.X) < 0 || (y + bact.Y) < 0 || (x + bact.X) > float64(world.Width) ||
-		(y + bact.Y) > float64(world.Height)) {
-        x = (rand.Float64() * 2) - 1
-        y = (rand.Float64() * 2) - 1
-	}
+	// FIXME replace with real target
+	//target_x := float64(world.Width) / 2.0
+	//target_y := float64(world.Height) / 2.0
+	target_x := 1.0
+	target_y := 1.0
 
-	return ActionMove{x + bact.X, y + bact.Y, 0, world, population, bact}
+	return ActionMove{target_x, target_y}
 }

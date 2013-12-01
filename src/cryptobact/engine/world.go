@@ -3,11 +3,6 @@ package engine
 import "math/rand"
 import "cryptobact/evo"
 
-const (
-	FOOD_TICKS = 30
-	FOOD_PER_TICK = 10
-)
-
 type World struct {
 	Populations []*evo.Population
 	Food []*Food
@@ -15,14 +10,16 @@ type World struct {
 	Clot []*Clot
 	Width int
 	Height int
+	FoodTicks int
+	FoodPerTick int
 }
 
 func (w *World) SpawnFood(tick int) {
-	if (tick % FOOD_TICKS) != 0 {
+	if (tick % w.FoodTicks) != 0 {
 		return
 	}
 
-	for i := 0; i < FOOD_PER_TICK; i++ {
+	for i := 0; i < w.FoodPerTick; i++ {
 		x := rand.Float64() * (float64(w.Width) - 1)
 		y := rand.Float64() * (float64(w.Height) - 1)
 		w.Food = append(w.Food, &Food{x, y, false})

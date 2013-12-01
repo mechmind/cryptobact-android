@@ -1,7 +1,9 @@
 package main
 
 import "log"
-import "./src/cryptobact/engine"
+//import "time"
+import "cryptobact/engine"
+//import "cryptobact/infektor"
 
 type Updater struct {}
 
@@ -10,8 +12,7 @@ func (f Updater) Update(w *engine.World) {
 }
 
 func main() {
-	log.Println("testing engine")
-	u := Updater{}
-	engine.Loop(u)
-	log.Println("done")
+    log.Println("testing engine")
+    u := Updater{}
+    engine.Loop(u)
 }

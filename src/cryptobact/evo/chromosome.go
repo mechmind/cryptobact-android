@@ -6,16 +6,18 @@ import "crypto/sha1"
 import "math/big"
 import "fmt"
 
+var _ = time.Now
+
 type DeviceId uint
 
 type Chromosome struct {
     CurrHash *big.Int
     PrevHash big.Int
-    //author PubKey
+    Author uint64
     DNA *DNA
-    Time time.Time
+    //Time time.Time
     Nonce uint
-    Device DeviceId
+    //Device DeviceId
 }
 
 func (c *Chromosome) Hash(nonce uint) *big.Int {
@@ -23,9 +25,7 @@ func (c *Chromosome) Hash(nonce uint) *big.Int {
     io.WriteString(h, fmt.Sprintf("%x{%s}T%dN%dD%d",
         c.PrevHash,
         c.DNA,
-        c.Time.UnixNano(),
-        nonce,
-        c.Device))
+        nonce))
     hash := big.NewInt(0)
     hash.SetBytes(h.Sum(nil))
     return hash

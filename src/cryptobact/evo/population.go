@@ -7,6 +7,7 @@ var _ = fmt.Print
 
 type Population struct {
     // @TODO author
+    Chain *Chromochain
     Options *PopulationOptions
 
     Miner *Miner
@@ -42,12 +43,13 @@ func NewPopulation(miner *Miner, chain *Chromochain,
     }
 
     bacts := make([]*Bacteria, 0)
-    chromos := chain.GetLastChromosomes()
+    chromos := chain.GetChromosomes()
     for _, c := range chromos {
         bacts = append(bacts, &Bacteria{Chromosome: c, Born: true})
     }
 
-    return &Population{bacts: bacts, Options: options, Miner: miner}
+    return &Population{bacts: bacts, Options: options, Miner: miner,
+        Chain: chain}
 }
 
 func (p *Population) Fuck(a *Bacteria, b *Bacteria) *Bacteria {
@@ -69,7 +71,7 @@ func (p *Population) Fuck(a *Bacteria, b *Bacteria) *Bacteria {
     }
 
     new_bacteria := &Bacteria{
-        Chromosome: &Chromosome{DNA: new_dna},
+        Chromosome: &Chromosome{Author: a.Chromosome.Author, DNA: new_dna},
         Born: false}
 
     // mining here!

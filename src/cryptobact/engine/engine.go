@@ -2,14 +2,18 @@ package engine
 
 import "runtime"
 import "math/rand"
-//import "fmt"
+import "time"
+import "log"
 
 import "cryptobact/evo"
+import "cryptobact/infektor"
 
 const(
     WIDTH = 16
     HEIGHT = 24
 )
+
+var Miner *evo.Miner
 
 type Updater interface {
     Update(*World)
@@ -18,10 +22,10 @@ type Updater interface {
 func Loop(updater Updater) {
     runtime.GOMAXPROCS(2)
 
-    miner := evo.NewMiner(146)
-    miner.Start()
+    Miner = evo.NewMiner(146)
+    Miner.Start()
 
-    chain := &evo.Chromochain{}
+    chain := &evo.Chromochain{Author: uint64(rand.Int63())}
 
     world := &World{}
 
@@ -43,33 +47,34 @@ func Loop(updater Updater) {
 
     world.Width = WIDTH
     world.Height = HEIGHT
-    world.MyPopulation = evo.NewPopulation(miner, chain, options)
+    world.Populations = []*evo.Population{
+        evo.NewPopulation(Miner, chain, options),
+    }
 
-	for _, b := range world.MyPopulation.GetBacts() {
-		b.X = rand.Float64() * float64(world.Width)
-		b.Y = rand.Float64() * float64(world.Height)
-		b.TTL = int(10000 * float64(world.MyPopulation.GetGene(b, 7)) / 10)
-		b.Energy = 1000 * float64(world.MyPopulation.GetGene(b, 11)) / 10
-	}
+    infektor := infektor.NewInfektor([]uint{
+            2345,
+            4567,
+            5678,
+        },
+    )
+
+    InitPopulation(world, world.Populations[0])
+
+    infections := infektor.Listen()
+    infektor.Spread(world.Populations[0], 1 * time.Second)
 
     tick := 0
     for {
         world.SpawnFood(tick)
         grid.CalcWeights(world)
 
-        for _, bact := range world.MyPopulation.GetBacts() {
-			if !bact.Born {
-				continue
-			}
-            a := GetAction(bact, &grid, world)
-            a.Apply(bact, world)
+        for _, population := range world.Populations {
+            SimulatePopulation(&grid, world, population)
         }
 
-        world.MyPopulation.CatchNewBorn()
-		//fmt.Println("count", len(world.MyPopulation.GetBacts()))
-		//fmt.Println(world.MyPopulation.GetBacts())
+        ProcessInfections(world, infections)
+
         world.CleanFood()
-		world.GetOld()
         updater.Update(world)
 
 		if tick == 999 {
@@ -77,5 +82,49 @@ func Loop(updater Updater) {
 		} else {
 			tick += 1
 		}
+    }
+}
+
+func SimulatePopulation(grid *Grid, world *World, population *evo.Population) {
+    for _, bact := range population.GetBacts() {
+        if !bact.Born {
+            continue
+        }
+        a := GetAction(population, bact, grid, world)
+        a.Apply()
+    }
+
+    population.CatchNewBorn()
+    world.GetOld(population)
+}
+
+func InitPopulation(world *World, population *evo.Population) {
+	for _, b := range population.GetBacts() {
+		b.X = rand.Float64() * float64(world.Width)
+		b.Y = rand.Float64() * float64(world.Height)
+		b.TTL = int(10000 * float64(population.GetGene(b, 7)) / 10)
+		b.Energy = 1000 * float64(population.GetGene(b, 11)) / 10
+	}
+}
+
+func ProcessInfections(world *World, infections chan *evo.Chromosome) {
+    select {
+    case new_chromo := <- infections:
+        new_chain := &evo.Chromochain{
+            Author: new_chromo.Author,
+            Initial: new_chromo}
+
+        for _, p := range world.Populations {
+            if p.Chain.Author  == new_chromo.Author {
+                return
+            }
+        }
+
+        log.Println(world.Populations[0].Chain.Author)
+        log.Println(new_chain.Author)
+
+        world.Populations = append(world.Populations,
+            evo.NewPopulation(Miner, new_chain, nil))
+    default:
     }
 }

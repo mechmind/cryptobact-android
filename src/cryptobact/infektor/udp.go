@@ -1,9 +1,15 @@
 package infektor
 
+// @TBD make transport agnostic
+
 import "fmt"
 import "net"
 import "time"
-import "log"
+//import "log"
+//import "bytes"
+import "encoding/json"
+
+import "cryptobact/evo"
 
 var _ = time.Now
 var _ = fmt.Println
@@ -17,20 +23,17 @@ func NewInfektor(ports []uint) *Infektor {
     return &Infektor{ports: ports}
 }
 
-func (ifk *Infektor) Listen() bool {
+func (ifk *Infektor) Listen() chan *evo.Chromosome {
+    infections := make(chan *evo.Chromosome, 255)
     ifk.sockets = make([]*net.UDPConn, 0)
     for _, num := range ifk.ports {
         server, err := net.ResolveUDPAddr("udp", fmt.Sprintf(":%d", num))
-        log.Printf("!!! listen on %s\n", server)
         sock, err := net.ListenUDP("udp", server)
         if err == nil {
             ifk.sockets = append(ifk.sockets, sock)
         } else {
-            log.Printf("!!! %s\n", err)
             continue
         }
-
-        log.Printf("!!! success without a error")
 
         go func(sock *net.UDPConn) {
             for {
@@ -40,21 +43,40 @@ func (ifk *Infektor) Listen() bool {
                     continue
                 }
 
-                log.Printf("!!! %s: %s\n", remote, buf)
+                new_chromo := &evo.Chromosome{}
+                err = json.Unmarshal(buf[:rlen], new_chromo)
+                if err != nil {
+                    continue
+                }
+
+                infections <- new_chromo
             }
         }(sock)
     }
 
-    return len(ifk.sockets) > 0
+    return infections
 }
 
 
+func (ifk *Infektor) Spread(population *evo.Population, d time.Duration) {
+    ticker := time.NewTicker(d)
+    go func (ifk *Infektor, population *evo.Population, ticker *time.Ticker) {
+        for {
+            <- ticker.C
+            ifk.TransmitDisease(population)
+        }
+    }(ifk, population, ticker)
+}
 
-func (ifk *Infektor) TransmitDisease() bool {
+
+// @TBD send Chromochain instead of evo.Population
+func (ifk *Infektor) TransmitDisease(population *evo.Population) bool {
     addrs := GetBroadcastAddrs()
     if len(addrs) == 0 {
         return false
     }
+
+    packet := CreateDiseasePacket(population)
 
     for _, p := range ifk.ports {
         for _, a := range addrs {
@@ -68,12 +90,26 @@ func (ifk *Infektor) TransmitDisease() bool {
                 continue
             }
 
-            sock.Write([]byte{'h', 'u', 'i', '\n'})
-            log.Printf("sent at sock %s:%d\n", a, p)
+
+            sock.Write(packet)
+
+            //sock.Write([]byte{'h', 'u', 'i', '\n'})
+            //log.Printf("sent at sock %s:%d\n", a, p)
         }
     }
 
     return true
+}
+
+func CreateDiseasePacket(population *evo.Population) []byte {
+    //encoder := json.NewEncoder(buffer)
+    bacts := population.GetBacts()
+    if len(bacts) > 0 {
+        buffer, _ := json.Marshal(bacts[0].Chromosome)
+        return buffer
+    } else {
+        return nil
+    }
 }
 
 func GetBroadcastAddrs() []net.IP {

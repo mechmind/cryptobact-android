@@ -11,6 +11,7 @@ import "unsafe"
 
 const (
     ID_BACTERIA = iota
+    ID_EGG
     ID_FOOD
     TOTAL_IDS
 )
@@ -22,6 +23,7 @@ var glSizeMap = map[C.GLuint]C.GLuint{
 var mainSet = []*objectSet{
     ID_BACTERIA: &objectSet{
         glType: C.GL_TRIANGLES,
+        glColor: [3]C.GLfloat{1.0, 0.8, 0.4},
         objPattern: []C.GLfloat{
             0, -30,  0, 0, -8, -6,
             0, -30,   8, -6,  0, 0,
@@ -29,6 +31,19 @@ var mainSet = []*objectSet{
             12, -2,    0, 6,  0, 0,
             0, 6,     -12, -2,   0, 0,
             -12, -2,    -8, -6,   0, 0,
+        },
+    },
+    ID_EGG: &objectSet{
+        glType: C.GL_TRIANGLES,
+        glColor: [3]C.GLfloat{0.1, 0.2, 0.8},
+        objPattern: []C.GLfloat{
+            0, 0,  -5, -11,  5, -11,
+            0, 0,   5, -11,  8, -7,
+            0, 0,   8, -7,  8, 7,
+            0, 0,   8, 7,   5, 11,
+            0, 0,   5, 11,  -5, 11,
+            0, 0,  -5, 11,  -8, 7,
+            0, 0,  -8, 7,  -5, -11,
         },
     },
     ID_FOOD: &objectSet{
@@ -40,7 +55,7 @@ var mainSet = []*objectSet{
 type objectSet struct {
     glBufferId C.GLuint
     glType C.GLenum
-    glColor int
+    glColor [3]C.GLfloat
     objPattern []C.GLfloat
     vxs []C.GLfloat
     vxsBB []C.GLfloat
@@ -90,6 +105,7 @@ func (r *Render) RenderAll() {
         }
         C.glBindBuffer(C.GL_ARRAY_BUFFER, set.glBufferId)
         C.glVertexAttribPointer(r.posAttr, 2, C.GL_FLOAT, C.GL_FALSE, 0, unsafe.Pointer(uintptr(0)))
+        C.glUniform3f(C.GLint(g.colorUni), set.glColor[0], set.glColor[1], set.glColor[2])
         C.glDrawArrays(set.glType, 0, (C.GLsizei)(len(set.vxs) / 2))
     }
 }

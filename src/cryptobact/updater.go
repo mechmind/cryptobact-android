@@ -2,7 +2,6 @@ package main
 
 import (
     "cryptobact/engine"
-    "log"
 )
 
 const UPDATER_QUEUE = 1
@@ -77,12 +76,16 @@ func (r *Updater) handleUpdate(w *engine.World) {
         for _, b := range p.GetBacts() {
             //if b != nil && b.Born {
             if b != nil {
-                r.render.UpdateSet(ID_BACTERIA, float32(b.X), float32(b.Y), 1.0)
-                bactCount++
+                if b.Born {
+                    r.render.UpdateSet(ID_BACTERIA, float32(b.X), float32(b.Y), 1.0)
+                    bactCount++
+                } else {
+                    r.render.UpdateSet(ID_EGG, float32(b.X), float32(b.Y), 1.0)
+                }
             }
         }
     }
-    log.Println("handled", bactCount, "bacts")
+    //log.Println("handled", bactCount, "bacts")
 }
 
 func (r *Updater) isWorldUpdated() chan struct{} {

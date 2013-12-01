@@ -15,6 +15,7 @@ import "C"
 
 import (
 	"cryptobact/engine"
+	"cryptobact/infektor"
 	"fmt"
 	"log"
 	"math"
@@ -80,6 +81,12 @@ const fragShaderSrcDef = `
 `
 
 func main() {
+    ik := infektor.NewInfektor([]uint{
+        2345,
+        3456,
+        4567,
+    })
+    ik.Listen()
 	runtime.GOMAXPROCS(2)
 }
 

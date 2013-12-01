@@ -13,8 +13,7 @@ type Bacteria struct {
 }
 
 func (b *Bacteria) String() string {
-    return fmt.Sprintf("{%5.2f; %5.2f} E%6.1f TTL%5d :: %s [%t]\n",
-        b.X, b.Y,
+    return fmt.Sprintf("E%6.1f TTL%5d :: %s %t",
         b.Energy,
         b.TTL,
         b.Chromosome.DNA,

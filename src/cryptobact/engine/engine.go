@@ -70,7 +70,8 @@ func Loop(updater Updater) {
         world.SpawnFood(tick)
         grid.CalcWeights(world)
 
-        for _, population := range world.Populations {
+        for i, population := range world.Populations {
+            _ = i
             SimulatePopulation(&grid, world, population)
         }
 
@@ -88,6 +89,7 @@ func Loop(updater Updater) {
 }
 
 func SimulatePopulation(grid *Grid, world *World, population *evo.Population) {
+    log.Println(len(population.GetBacts()))
     for _, bact := range population.GetBacts() {
         if !bact.Born {
             continue
@@ -132,8 +134,10 @@ func ProcessInfections(world *World, infections chan *evo.Chromosome) {
 
             log.Println("INFECT", new_chain.Author)
 
-            world.Populations = append(world.Populations,
-            evo.NewPopulation(Miner, new_chain, nil))
+            new_population := evo.NewPopulation(Miner, new_chain, nil)
+            InitPopulation(world, new_population)
+
+            world.Populations = append(world.Populations, new_population)
         default:
             stop_for = true
         }

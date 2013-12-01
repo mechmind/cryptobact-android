@@ -45,6 +45,9 @@ func (w *World) CleanFood() {
 
 func (w *World) GetOld(population *evo.Population) {
 	for _, b := range population.GetBacts() {
+        if !b.Born {
+            continue
+        }
 		b.TTL -= int(population.GetGene(b, 17) / 10.0 + 1)
 	}
 }

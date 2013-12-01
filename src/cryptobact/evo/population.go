@@ -1,9 +1,11 @@
 package evo
 
+import "log"
 import "fmt"
 import "math/rand"
 
 var _ = fmt.Print
+var _ = log.Print
 
 type Population struct {
     // @TODO author
@@ -87,6 +89,10 @@ func (p *Population) GetBacts() []*Bacteria {
 }
 
 func (p *Population) GetAttitude(b *Bacteria, attitude_id string) uint {
+    if p.Options.Attitudes == nil {
+        return 0
+    }
+
     return b.Chromosome.DNA.MatchPatternCount(
         p.Options.Attitudes[attitude_id].Pattern)
 }

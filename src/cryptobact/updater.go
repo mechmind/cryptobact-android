@@ -65,7 +65,7 @@ func (r *Updater) handleUpdate(w *engine.World) {
 
     var bactCount int
     for _, b := range w.MyPopulation.GetBacts() {
-        if b != nil {
+        if b != nil && b.Born {
             r.render.UpdateSet(ID_BACTERIA, float32(b.X), float32(b.Y), 1.0)
             bactCount++
         }

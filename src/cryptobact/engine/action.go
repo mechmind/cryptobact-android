@@ -9,14 +9,19 @@ type Action interface {
 }
 
 type ActionMove struct {
-	TargetX float64
-	TargetY float64
+	X float64
+	Y float64
+	Angle float64
+	World *World
+	Population *evo.Population
+	Bact *evo.Bacteria
 }
 
-func (a ActionMove) Apply(b *evo.Bacteria, w *World) {
+func (a ActionMove) Apply() {
+	b := a.Bact
 	alpha := b.Angle
-	xt := a.TargetX
-	yt := a.TargetY
+	xt := a.X
+	yt := a.Y
 	x := b.X
 	y := b.Y
 	xz := (math.Cos(alpha)) + x
@@ -95,9 +100,9 @@ func (a ActionFuck) Apply() {
 
     child.X = (a.Object.X + b.X) / 2
     child.Y = (a.Object.Y + b.Y) / 2
-	child.TTL = int(10000 * float64(w.MyPopulation.GetGene(child, 7)) / 10)
-	child.Energy = 1000 * float64(w.MyPopulation.GetGene(child, 11)) / 10
-	child.RotationSpeed = 10.0 + float64(w.MyPopulation.GetGene(child, 4) / 20)
+	child.TTL = int(10000 * float64(a.MyPopulation.GetGene(child, 7)) / 10)
+	child.Energy = 1000 * float64(a.MyPopulation.GetGene(child, 11)) / 10
+	child.RotationSpeed = 10.0 + float64(a.MyPopulation.GetGene(child, 4) / 20)
 
     a.Object.Energy -= b_coeff / b_lust * 4
     b.Energy -= a_coeff / a_lust * 4
@@ -153,5 +158,5 @@ func GetAction(population *evo.Population, bact *evo.Bacteria, grid *Grid,
 	target_x := 1.0
 	target_y := 1.0
 
-	return ActionMove{target_x, target_y}
+	return ActionMove{x + bact.X, y + bact.Y, 0, world, population, bact}
 }

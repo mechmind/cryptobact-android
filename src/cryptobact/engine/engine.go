@@ -2,7 +2,8 @@ package engine
 
 import "runtime"
 import "math/rand"
-import "fmt"
+import "time"
+import "log"
 
 import "cryptobact/evo"
 import "cryptobact/infektor"
@@ -66,27 +67,19 @@ func Loop(updater Updater) {
     InitPopulation(world, world.Populations[0])
 
     infections := infektor.Listen()
-    infektor.Spread(world.Populations[0], 5 * time.Second)
-
-	for _, b := range world.MyPopulation.GetBacts() {
-		b.X = rand.Float64() * float64(world.Width)
-		b.Y = rand.Float64() * float64(world.Height)
-		b.TTL = int(10000 * float64(world.MyPopulation.GetGene(b, 7)) / 10)
-		b.Energy = 1000 * float64(world.MyPopulation.GetGene(b, 11)) / 10
-		b.RotationSpeed = 10.0 + float64(world.MyPopulation.GetGene(b, 4) / 20)
-	}
+    infektor.Spread(world.Populations[0], 1 * time.Second)
 
     tick := 0
     for {
         world.SpawnFood(tick)
         grid.CalcWeights(world)
 
-        for i, population := range world.Populations {
-            _ = i
+        for _, population := range world.Populations {
             SimulatePopulation(&grid, world, population)
         }
 
         ProcessInfections(world, infections)
+
         world.CleanFood()
         updater.Update(world)
 
@@ -117,6 +110,7 @@ func InitPopulation(world *World, population *evo.Population) {
 		b.Y = rand.Float64() * float64(world.Height)
 		b.TTL = int(10000 * float64(population.GetGene(b, 7)) / 10)
 		b.Energy = 1000 * float64(population.GetGene(b, 11)) / 10
+		b.RotationSpeed = 10.0 + float64(population.GetGene(b, 4) / 20)
 	}
 }
 

@@ -60,8 +60,8 @@ func (a ActionMove) Apply() {
 		}
 	}
 
-    dx := (x - xt) / math.Abs(x - xt) * a.Population.GetGene(a.Bact, 6) / 500.0
-    dy := (y - yt) / math.Abs(y - yt) * a.Population.GetGene(a.Bact, 7) / 500.0
+    dx := (xt - x) / math.Abs(x - xt) * a.Population.GetGene(a.Bact, 6) / 500.0
+    dy := (yt - y) / math.Abs(y - yt) * a.Population.GetGene(a.Bact, 7) / 500.0
 
     b.X += rand.NormFloat64() * 0.1 + dx
     b.Y += rand.NormFloat64() * 0.1 + dy

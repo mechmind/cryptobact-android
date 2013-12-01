@@ -110,23 +110,31 @@ func InitPopulation(world *World, population *evo.Population) {
 }
 
 func ProcessInfections(world *World, infections chan *evo.Chromosome) {
-    select {
-    case new_chromo := <- infections:
-        new_chain := &evo.Chromochain{
-            Author: new_chromo.Author,
-            Initial: new_chromo}
+    for {
+        select {
+        case new_chromo := <- infections:
+            new_chain := &evo.Chromochain{
+                Author: new_chromo.Author,
+                Initial: new_chromo}
 
-        for _, p := range world.Populations {
-            if p.Chain.Author  == new_chromo.Author {
-                return
+            skip := false
+            for _, p := range world.Populations {
+                if p.Chain.Author == new_chromo.Author {
+                    skip = true
+                    break
+                }
             }
-        }
 
-        log.Println(world.Populations[0].Chain.Author)
-        log.Println(new_chain.Author)
+            if (skip) {
+                continue
+            }
 
-        world.Populations = append(world.Populations,
+            log.Println("INFECT", new_chain.Author)
+
+            world.Populations = append(world.Populations,
             evo.NewPopulation(Miner, new_chain, nil))
-    default:
+        default:
+            break
+        }
     }
 }

@@ -26,7 +26,7 @@ func Loop(updater Updater) {
 
     rand.Seed(time.Now().UnixNano())
 
-    Miner = evo.NewMiner(147)
+    Miner = evo.NewMiner(149)
     Miner.Start()
 
     chain := &evo.Chromochain{Author: uint64(rand.Int63())}

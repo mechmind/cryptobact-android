@@ -165,9 +165,11 @@ func GetAction(population *evo.Population, bact *evo.Bacteria, grid *Grid,
 	//target_x := float64(world.Width) / 2.0
 	//target_y := float64(world.Height) / 2.0
     if world.Tick == 3 {
-        bact.TargetX = rand.NormFloat64() * 20
-        bact.TargetY = rand.NormFloat64() * 20
+        bact.TargetX = math.Abs(rand.NormFloat64()) * 3 + 10.0
+        bact.TargetY = math.Abs(rand.NormFloat64()) * 3 + 10.0
     }
+
+    log.Println(bact.TargetX, bact.TargetY)
 
 	return ActionMove{bact.TargetX, bact.TargetY, world, population, bact}
 }

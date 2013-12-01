@@ -2,7 +2,7 @@ package engine
 
 import "runtime"
 import "math/rand"
-import "fmt"
+//import "fmt"
 
 import "cryptobact/evo"
 
@@ -58,13 +58,16 @@ func Loop(updater Updater) {
         grid.CalcWeights(world)
 
         for _, bact := range world.MyPopulation.GetBacts() {
+			if !bact.Born {
+				continue
+			}
             a := GetAction(bact, &grid, world)
             a.Apply(bact, world)
         }
 
         world.MyPopulation.CatchNewBorn()
-		fmt.Println(len(world.MyPopulation.GetBacts()))
-		fmt.Println(world.MyPopulation.GetBacts())
+		//fmt.Println("count", len(world.MyPopulation.GetBacts()))
+		//fmt.Println(world.MyPopulation.GetBacts())
         world.CleanFood()
 		world.GetOld()
         updater.Update(world)

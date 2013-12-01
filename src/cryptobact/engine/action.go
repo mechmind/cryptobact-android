@@ -1,6 +1,5 @@
 package engine
 
-import "fmt"
 import "math/rand"
 import "cryptobact/evo"
 
@@ -15,7 +14,6 @@ type ActionMove struct {
 }
 
 func (a ActionMove) Apply(b *evo.Bacteria, w *World) {
-	fmt.Println("action:move")
 	b.X = a.X
 	b.Y = a.Y
 	b.Angle = a.Angle
@@ -27,7 +25,6 @@ type ActionAttack struct {
 }
 
 func (a ActionAttack) Apply(b *evo.Bacteria, w *World) {
-	fmt.Println("action:attack")
 	a.Object.Energy -= a.Damage
 }
 
@@ -36,7 +33,7 @@ type ActionEat struct {
 }
 
 func (a ActionEat) Apply(b *evo.Bacteria, w *World) {
-	fmt.Println("action:eat")
+	b.Energy += float64(w.MyPopulation.GetGene(b, 12)) * 10.0
 	a.Object.Eaten = true
 }
 
@@ -45,7 +42,6 @@ type ActionFuck struct {
 }
 
 func (a ActionFuck) Apply(b *evo.Bacteria, w *World) {
-	fmt.Println("action:fuck")
     child := w.MyPopulation.Fuck(b, a.Object)
     a_coeff := float64(w.MyPopulation.GetGene(a.Object, 0))
     b_coeff := float64(w.MyPopulation.GetGene(b, 0))
@@ -54,15 +50,16 @@ func (a ActionFuck) Apply(b *evo.Bacteria, w *World) {
 
     child.X = (a.Object.X + b.X) / 2
     child.Y = (a.Object.Y + b.Y) / 2
+	child.TTL = int(10000 * float64(w.MyPopulation.GetGene(child, 7)) / 10)
+	child.Energy = 1000 * float64(w.MyPopulation.GetGene(child, 11)) / 10
 
-    a.Object.Energy -= b_coeff / b_lust * 10
-    b.Energy -= a_coeff / a_lust * 10
+    a.Object.Energy -= b_coeff / b_lust * 4
+    b.Energy -= a_coeff / a_lust * 4
 }
 
 type ActionDie struct {}
 
 func (a ActionDie) Apply(b *evo.Bacteria, w *World) {
-	fmt.Println("action:die")
 	w.MyPopulation.Kill(b)
 }
 
@@ -70,13 +67,13 @@ func GetAction(bact *evo.Bacteria, grid *Grid, world *World) Action {
 	// FIXME rewrite without random
 	//actions := []string{"move", "attack", "eat", "fuck", "die"}
 
-	if bact.TTL <= 0 {
+	if bact.TTL <= 0 || bact.Energy < 0 {
 		return ActionDie{}
 	}
 
 	if (rand.Intn(10) == 5) {
 		for _, b := range world.MyPopulation.GetBacts() {
-			if b.Energy > 0 {
+			if b.Energy > 0 && b.Born {
 				return ActionAttack{b, 30}
 			}
 		}
@@ -92,7 +89,7 @@ func GetAction(bact *evo.Bacteria, grid *Grid, world *World) Action {
 
 	if (rand.Intn(30) == 5) {
 		for _, b := range world.MyPopulation.GetBacts() {
-			if b.Energy > 0 {
+			if b.Energy > 0 && b.Born {
 				return ActionFuck{b}
 			}
 		}

@@ -27,7 +27,7 @@ import (
 const (
     X_COUNT = 16
     Y_COUNT = 24
-    CROSS_HALFSIZE = 2
+    CROSS_HALFSIZE = 2.5
 
     STEP = 25.0
 )
@@ -262,7 +262,7 @@ func (game *game) drawFrame() {
     // grid
     C.glBindBuffer(C.GL_ARRAY_BUFFER, game.gridBufId)
 	C.glVertexAttribPointer(game.posAttr, 2, C.GL_FLOAT, C.GL_FALSE, 0, unsafe.Pointer(uintptr(0)))
-    C.glDrawArrays(C.GL_LINES, 0, (C.GLsizei)(len(game.verts)))
+    C.glDrawArrays(C.GL_POINTS, 0, (C.GLsizei)(len(game.verts)))
     // world
     if status := game.updater.isWorldUpdated(); status != nil {
         // apply bb to render
@@ -301,8 +301,9 @@ func makeGridPoints(llimX, llimY, lstep float32) []C.GLfloat {
     var nextX, nextY C.GLfloat
     for nextX = 0.0 ; nextX < limX + 0.1 ; nextX += step {
         for nextY = 0.0; nextY < limY + 0.1; nextY += step {
-            data = append(data, nextX - CROSS_HALFSIZE, nextY, nextX + CROSS_HALFSIZE, nextY)
-            data = append(data, nextX, nextY - CROSS_HALFSIZE, nextX, nextY + CROSS_HALFSIZE)
+            data = append(data, nextX, nextY)
+//            data = append(data, nextX - CROSS_HALFSIZE, nextY, nextX + CROSS_HALFSIZE, nextY)
+//            data = append(data, nextX, nextY - CROSS_HALFSIZE, nextX, nextY + CROSS_HALFSIZE)
         }
     }
     return data

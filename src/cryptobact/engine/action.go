@@ -1,8 +1,12 @@
 package engine
 
+import "log"
+
 import "math"
 import "math/rand"
 import "cryptobact/evo"
+
+var _ = log.Print
 
 type Action interface {
 	Apply()
@@ -76,7 +80,7 @@ type ActionEat struct {
 
 func (a ActionEat) Apply() {
     b := a.Bact
-	b.Energy += float64(a.Population.GetGene(b, 12)) * 10.0
+	b.Energy += float64(a.Population.GetGene(b, 12))
 	a.Object.Eaten = true
 }
 
@@ -101,7 +105,7 @@ func (a ActionFuck) Apply() {
 	child.Energy = 1000 * float64(a.Population.GetGene(child, 11)) / 10
 	child.RotationSpeed = 10.0 + float64(a.Population.GetGene(child, 4) / 20)
 
-    a.Object.Energy -= b_coeff / b_lust * 4
+    a.Object.Energy -= b_coeff / b_lust * 80
     b.Energy -= a_coeff / a_lust * 4
 }
 
@@ -141,7 +145,7 @@ func GetAction(population *evo.Population, bact *evo.Bacteria, grid *Grid,
 		}
 	}
 
-	if (rand.Intn(30) == 5) {
+	if (rand.Intn(300) == 5) {
 		for _, b := range population.GetBacts() {
 			if b.Energy > 0 && b.Born {
 				return ActionFuck{b, world, population, bact}

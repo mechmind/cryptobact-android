@@ -8,6 +8,7 @@ import "time"
 import "log"
 
 var _ = time.Now
+var _ = fmt.Println
 
 type Infektor struct {
     ports []uint
@@ -23,12 +24,16 @@ func (ifk *Infektor) Listen() chan *evo.Chromosome {
     ifk.sockets = make([]*net.UDPConn, 0)
     for _, num := range ifk.ports {
         server, err := net.ResolveUDPAddr("udp", fmt.Sprintf(":%d", num))
+        log.Printf("!!! listen on %s\n", server)
         sock, err := net.ListenUDP("udp", server)
         if err == nil {
             ifk.sockets = append(ifk.sockets, sock)
         } else {
+            log.Printf("!!! %s\n", err)
             continue
         }
+
+        log.Printf("!!! success without a error")
 
         go func(sock *net.UDPConn) {
             for {

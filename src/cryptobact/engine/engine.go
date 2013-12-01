@@ -89,7 +89,6 @@ func Loop(updater Updater) {
 }
 
 func SimulatePopulation(grid *Grid, world *World, population *evo.Population) {
-    log.Println(len(population.GetBacts()))
     for _, bact := range population.GetBacts() {
         if !bact.Born {
             continue

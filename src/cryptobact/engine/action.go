@@ -1,5 +1,6 @@
 package engine
 
+import "fmt"
 import "math/rand"
 import "cryptobact/evo"
 
@@ -14,6 +15,7 @@ type ActionMove struct {
 }
 
 func (a ActionMove) Apply(b *evo.Bacteria, w *World) {
+	fmt.Println("action:move")
 	b.X = a.X
 	b.Y = a.Y
 	b.Angle = a.Angle
@@ -25,6 +27,7 @@ type ActionAttack struct {
 }
 
 func (a ActionAttack) Apply(b *evo.Bacteria, w *World) {
+	fmt.Println("action:attack")
 	a.Object.Energy -= a.Damage
 }
 
@@ -33,6 +36,7 @@ type ActionEat struct {
 }
 
 func (a ActionEat) Apply(b *evo.Bacteria, w *World) {
+	fmt.Println("action:eat")
 	a.Object.Eaten = true
 }
 
@@ -41,7 +45,7 @@ type ActionFuck struct {
 }
 
 func (a ActionFuck) Apply(b *evo.Bacteria, w *World) {
-	// FIXME implement
+	fmt.Println("action:fuck")
     child := w.MyPopulation.Fuck(b, a.Object)
     a_coeff := float64(w.MyPopulation.GetGene(a.Object, 0))
     b_coeff := float64(w.MyPopulation.GetGene(b, 0))
@@ -58,6 +62,7 @@ func (a ActionFuck) Apply(b *evo.Bacteria, w *World) {
 type ActionDie struct {}
 
 func (a ActionDie) Apply(b *evo.Bacteria, w *World) {
+	fmt.Println("action:die")
 	w.MyPopulation.Kill(b)
 }
 
@@ -81,6 +86,14 @@ func GetAction(bact *evo.Bacteria, grid *Grid, world *World) Action {
 		for _, f := range world.Food {
 			if f.Eaten == false {
 				return ActionEat{f}
+			}
+		}
+	}
+
+	if (rand.Intn(30) == 5) {
+		for _, b := range world.MyPopulation.GetBacts() {
+			if b.Energy > 0 {
+				return ActionFuck{b}
 			}
 		}
 	}

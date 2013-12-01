@@ -2,7 +2,7 @@ package engine
 
 import "runtime"
 import "math/rand"
-//import "fmt"
+import "fmt"
 
 import "cryptobact/evo"
 
@@ -63,7 +63,8 @@ func Loop(updater Updater) {
         }
 
         world.MyPopulation.CatchNewBorn()
-        //fmt.Println(world.MyPopulation.GetBacts())
+		fmt.Println(len(world.MyPopulation.GetBacts()))
+		fmt.Println(world.MyPopulation.GetBacts())
         world.CleanFood()
 		world.GetOld()
         updater.Update(world)

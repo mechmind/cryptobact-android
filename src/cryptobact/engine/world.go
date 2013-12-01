@@ -4,8 +4,8 @@ import "math/rand"
 import "cryptobact/evo"
 
 const (
-	FOOD_TICKS = 50
-	FOOD_PER_TICK = 3
+	FOOD_TICKS = 30
+	FOOD_PER_TICK = 10
 )
 
 type World struct {

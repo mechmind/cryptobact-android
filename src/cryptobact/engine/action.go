@@ -64,8 +64,8 @@ func (a ActionMove) Apply() {
 		}
 	}
 
-    dx := (xt - x) / math.Abs(x - xt) * a.Population.GetGene(a.Bact, 6) / 300.0
-    dy := (yt - y) / math.Abs(y - yt) * a.Population.GetGene(a.Bact, 7) / 300.0
+    dx := (xt - x) / math.Abs(x - xt) * a.Population.GetGene(a.Bact, 6) / 100.0
+    dy := (yt - y) / math.Abs(y - yt) * a.Population.GetGene(a.Bact, 7) / 100.0
 
     b.X += rand.NormFloat64() * 0.01 + dx
     b.Y += rand.NormFloat64() * 0.01 + dy
@@ -168,7 +168,7 @@ func GetAction(population *evo.Population, bact *evo.Bacteria, grid *Grid,
 	// FIXME replace with real target
 	//target_x := float64(world.Width) / 2.0
 	//target_y := float64(world.Height) / 2.0
-    if world.Tick == 3 {
+    if world.Tick % 200 == 0 {
         bact.TargetX = math.Abs(rand.NormFloat64()) * 3 + 10.0
         bact.TargetY = math.Abs(rand.NormFloat64()) * 3 + 10.0
     }

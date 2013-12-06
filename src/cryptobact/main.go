@@ -23,13 +23,12 @@ import (
 	"unsafe"
 )
 
-
 const (
-    X_COUNT = 16
-    Y_COUNT = 24
-    CROSS_HALFSIZE = 2.5
+	X_COUNT        = 16
+	Y_COUNT        = 24
+	CROSS_HALFSIZE = 2.5
 
-    STEP = 25.0
+	STEP = 25.0
 )
 
 var ticks float64
@@ -38,30 +37,30 @@ type game struct {
 	prog                C.GLuint
 	width, height       int
 	offsetUni, colorUni int
-    posAttr             C.GLuint
-    mvpUni              int
-    mvp                 []C.GLfloat
+	posAttr             C.GLuint
+	mvpUni              int
+	mvp                 []C.GLfloat
 
 	mu               sync.Mutex // Protects offsetX, offsetY
 	offsetX, offsetY float32
 
-    // buffer ids
-    gridBufId C.GLuint
-    sliderLinesBufId, sliderTriagsBufId C.GLuint
+	// buffer ids
+	gridBufId                           C.GLuint
+	sliderLinesBufId, sliderTriagsBufId C.GLuint
 
-    verts []C.GLfloat
+	verts []C.GLfloat
 
-    updater *Updater
-    render *Render
+	updater *Updater
+	render  *Render
 
-    sliders []Slider
-    sliderLineBuffer []C.GLfloat
-    sliderTrBuffer []C.GLfloat
+	sliders          []Slider
+	sliderLineBuffer []C.GLfloat
+	sliderTrBuffer   []C.GLfloat
 
-    gameScreen *gameScreen
-    presetScreen *presetScreen
+	gameScreen   *gameScreen
+	presetScreen *presetScreen
 
-    currentScreen UInteractive
+	currentScreen UInteractive
 }
 
 var g game
@@ -88,15 +87,15 @@ const fragShaderSrcDef = `
 
 func main() {
 	runtime.GOMAXPROCS(2)
-    g.updater = newUpdater()
-    go g.updater.fetchUpdates()
-    go engine.Loop(g.updater)
+	g.updater = newUpdater()
+	go g.updater.fetchUpdates()
+	go engine.Loop(g.updater)
 
-    g.sliders = []Slider{
-        Slider{0.5},
-        Slider{0.5},
-        Slider{0.5},
-    }
+	g.sliders = []Slider{
+		Slider{0.5},
+		Slider{0.5},
+		Slider{0.5},
+	}
 }
 
 func GetShaderInfoLog(shader C.GLuint) string {
@@ -195,7 +194,7 @@ func uniformLocation(prog C.GLuint, name string) int {
 	attrib := int(C.glGetUniformLocation(C.GLuint(prog), (*C.GLchar)(unsafe.Pointer(nameC))))
 	checkGLError()
 	if attrib == -1 {
-        panic(fmt.Errorf("Failed to find attrib position for %v", name))
+		panic(fmt.Errorf("Failed to find attrib position for %v", name))
 	}
 	return attrib
 }
@@ -207,44 +206,43 @@ func GetString(name C.GLenum) string {
 
 func updateCurrentBuffer(verts []C.GLfloat) {
 	C.glBufferData(C.GL_ARRAY_BUFFER,
-        C.GLsizeiptr(len(verts)*int(unsafe.Sizeof(verts[0]))),
-        unsafe.Pointer(&verts[0]), C.GL_STATIC_DRAW)
+		C.GLsizeiptr(len(verts)*int(unsafe.Sizeof(verts[0]))),
+		unsafe.Pointer(&verts[0]), C.GL_STATIC_DRAW)
 }
 
-
 func (game *game) resize(width, height int) {
-    log.Println("now resize to ", width, height)
+	log.Println("now resize to ", width, height)
 	game.width = width
 	game.height = height
 
-    game.offsetX = float32(width - X_COUNT * STEP) / 2.0
-    game.offsetY = float32(height - Y_COUNT * STEP) / 2.0
+	game.offsetX = float32(width-X_COUNT*STEP) / 2.0
+	game.offsetY = float32(height-Y_COUNT*STEP) / 2.0
 
-    C.set_ortho_proj((*C.GLfloat)(unsafe.Pointer(&game.mvp[0])), 0, C.GLfloat(width - 1),
-        0, C.GLfloat(height - 1), 1.0, -1.0)
+	C.set_ortho_proj((*C.GLfloat)(unsafe.Pointer(&game.mvp[0])), 0, C.GLfloat(width-1),
+		0, C.GLfloat(height-1), 1.0, -1.0)
 	C.glViewport(0, 0, C.GLsizei(width), C.GLsizei(height))
 
-    game.currentScreen.HandleResize(width, height)
+	game.currentScreen.HandleResize(width, height)
 }
 
 func (game *game) initGL() {
-    log.Println("initializing gl")
+	log.Println("initializing gl")
 	C.glClearColor(0.0, 0.0, 0.0, 1.0)
 	C.glEnable(C.GL_CULL_FACE)
 	C.glEnable(C.GL_DEPTH_TEST)
 
-    game.mvp = make([]C.GLfloat, 16)
+	game.mvp = make([]C.GLfloat, 16)
 	game.prog = createProgram(vertShaderSrcDef, fragShaderSrcDef)
 	posAttrib := attribLocation(game.prog, "vPosition")
-    game.posAttr = C.GLuint(posAttrib)
+	game.posAttr = C.GLuint(posAttrib)
 	game.offsetUni = uniformLocation(game.prog, "offset")
-    game.mvpUni = uniformLocation(game.prog, "mvp")
+	game.mvpUni = uniformLocation(game.prog, "mvp")
 	game.colorUni = uniformLocation(game.prog, "color")
 	C.glUseProgram(game.prog)
 	C.glEnableVertexAttribArray(C.GLuint(posAttrib))
-    // transformation matrix
-    C.glUniformMatrix4fv(C.GLint(game.mvpUni), 1, C.GL_FALSE,
-        (*C.GLfloat)(unsafe.Pointer(&game.mvp[0])))
+	// transformation matrix
+	C.glUniformMatrix4fv(C.GLint(game.mvpUni), 1, C.GL_FALSE,
+		(*C.GLfloat)(unsafe.Pointer(&game.mvp[0])))
 
 	game.gridBufId = GenBuffer()
 	checkGLError()
@@ -252,17 +250,17 @@ func (game *game) initGL() {
 	checkGLError()
 	game.sliderTriagsBufId = GenBuffer()
 	checkGLError()
-    // set up grid buffer
-    game.verts = makeGridPoints(X_COUNT * STEP, Y_COUNT * STEP, STEP)
-    C.glBindBuffer(C.GL_ARRAY_BUFFER, game.gridBufId)
-    updateCurrentBuffer(game.verts)
+	// set up grid buffer
+	game.verts = makeGridPoints(X_COUNT*STEP, Y_COUNT*STEP, STEP)
+	C.glBindBuffer(C.GL_ARRAY_BUFFER, game.gridBufId)
+	updateCurrentBuffer(game.verts)
 
-    // start engine
-    game.render = newRender(C.GLuint(posAttrib))
-    game.updater.AttachRender(game.render)
+	// start engine
+	game.render = newRender(C.GLuint(posAttrib))
+	game.updater.AttachRender(game.render)
 
-    game.currentScreen = newHookerScreen()
-    log.Println("screen: now hooker")
+	game.currentScreen = newHookerScreen()
+	log.Println("screen: now hooker")
 }
 
 func (game *game) drawFrame() {
@@ -273,34 +271,34 @@ func (game *game) drawFrame() {
 	offX := game.offsetX
 	offY := game.offsetY
 	game.mu.Unlock()
-    // basic stuff
+	// basic stuff
 	C.glUniform2f(C.GLint(game.offsetUni), C.GLfloat(offX), C.GLfloat(offY))
 	C.glUniform3f(C.GLint(game.colorUni), 1.0, C.GLfloat(color), 0)
-    C.glUniformMatrix4fv(C.GLint(game.mvpUni), 1, C.GL_FALSE,
-        (*C.GLfloat)(unsafe.Pointer(&game.mvp[0])))
+	C.glUniformMatrix4fv(C.GLint(game.mvpUni), 1, C.GL_FALSE,
+		(*C.GLfloat)(unsafe.Pointer(&game.mvp[0])))
 	C.glClear(C.GL_COLOR_BUFFER_BIT | C.GL_DEPTH_BUFFER_BIT)
 	C.glUseProgram(game.prog)
 
-    game.currentScreen.HandleDraw()
+	game.currentScreen.HandleDraw()
 }
 
 func (game *game) onTouch(action int, x, y float32) {
-    game.currentScreen.HandleTouch(action, x, y)
+	game.currentScreen.HandleTouch(action, x, y)
 }
 
 func makeGridPoints(llimX, llimY, lstep float32) []C.GLfloat {
-    limX, limY, step := C.GLfloat(llimX), C.GLfloat(llimY), C.GLfloat(lstep)
-    data := make([]C.GLfloat, 0, int(math.Ceil(float64(limX) * float64(limY) / (float64(step) * float64(step)) + 4) * 4))
+	limX, limY, step := C.GLfloat(llimX), C.GLfloat(llimY), C.GLfloat(lstep)
+	data := make([]C.GLfloat, 0, int(math.Ceil(float64(limX)*float64(limY)/(float64(step)*float64(step))+4)*4))
 
-    var nextX, nextY C.GLfloat
-    for nextX = 0.0 ; nextX < limX + 0.1 ; nextX += step {
-        for nextY = 0.0; nextY < limY + 0.1; nextY += step {
-            data = append(data, nextX, nextY)
-//            data = append(data, nextX - CROSS_HALFSIZE, nextY, nextX + CROSS_HALFSIZE, nextY)
-//            data = append(data, nextX, nextY - CROSS_HALFSIZE, nextX, nextY + CROSS_HALFSIZE)
-        }
-    }
-    return data
+	var nextX, nextY C.GLfloat
+	for nextX = 0.0; nextX < limX+0.1; nextX += step {
+		for nextY = 0.0; nextY < limY+0.1; nextY += step {
+			data = append(data, nextX, nextY)
+			//            data = append(data, nextX - CROSS_HALFSIZE, nextY, nextX + CROSS_HALFSIZE, nextY)
+			//            data = append(data, nextX, nextY - CROSS_HALFSIZE, nextX, nextY + CROSS_HALFSIZE)
+		}
+	}
+	return data
 }
 
 // Use JNI_OnLoad to ensure that the go runtime is initialized at a predictable time,

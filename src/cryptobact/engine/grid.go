@@ -2,7 +2,7 @@ package engine
 
 import "math"
 
-const(
+const (
 	MIN_WEIGHT = 0.001
 )
 
@@ -15,8 +15,8 @@ type Cell struct {
 type Grid [][]Cell
 
 func (g *Grid) CalcWeights(w *World) {
-    for x, row := range *g {
-        for y, _ := range row {
+	for x, row := range *g {
+		for y, _ := range row {
 			c := Cell{}
 			for i := range w.Food {
 				c.Food += GetWeight(
@@ -48,7 +48,7 @@ func (g *Grid) CalcWeights(w *World) {
 }
 
 func GetWeight(x1 float64, y1 float64, x2 float64, y2 float64) float64 {
-	result := 1 / (math.Pow(x2 - x1, 2) + math.Pow(y2 - y1, 2) + 1)
+	result := 1 / (math.Pow(x2-x1, 2) + math.Pow(y2-y1, 2) + 1)
 	if result < MIN_WEIGHT {
 		return 0
 	}

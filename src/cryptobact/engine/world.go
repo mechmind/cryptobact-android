@@ -3,6 +3,7 @@ package engine
 import (
 	"cryptobact/evo"
 
+	"math/big"
 	"math/rand"
 )
 
@@ -15,11 +16,15 @@ type World struct {
 	Height      int
 	FoodTicks   int
 	FoodPerTick int
-	Tick        int
+	Tick        *big.Int
 }
 
-func (w *World) SpawnFood(tick int) {
-	if (tick % w.FoodTicks) != 0 {
+func NewWorld() *World {
+	return &World{Tick: big.NewInt(0)}
+}
+
+func (w *World) SpawnFood() {
+	if !w.Notch(w.FoodTicks) {
 		return
 	}
 
@@ -50,5 +55,17 @@ func (w *World) GetOld(population *evo.Population) {
 			continue
 		}
 		b.TTL -= int(population.GetGene(b, 17)/10.0 + 1)
+	}
+}
+
+func (w *World) Step() {
+	w.Tick = w.Tick.Add(w.Tick, big.NewInt(1))
+}
+
+func (w *World) Notch(notch int) bool {
+	if w.Tick.Mod(w.Tick, big.NewInt(int64(notch))) == big.NewInt(0) {
+		return true
+	} else {
+		return false
 	}
 }

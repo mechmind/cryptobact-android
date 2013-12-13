@@ -4,43 +4,47 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"time"
 )
 
 var _ = fmt.Print
 
-type ControlCommand struct {
-	command string
-	task    *Chromosome
-}
-
-type ControlChan chan *ControlCommand
-
-type TaskChan chan *Chromosome
-
 type Miner struct {
 	Difficulty *big.Int
-	CtrlChan   ControlChan
-	InChan     TaskChan
-	OutChan    TaskChan
+	nonce      int
+	khs        float64
+	getwork    chan bool
+	kill       chan bool
+	cancel     chan *Chromosome
+	task       chan *Chromosome
+	sendwork   chan *Chromosome
+	proved     chan *Chromosome
 }
 
 func NewMiner(difficulty uint, bufSize int) *Miner {
 	threshold := big.NewInt(1)
 	threshold.Lsh(threshold, difficulty)
 	return &Miner{Difficulty: threshold,
-		CtrlChan: make(ControlChan, bufSize),
-		InChan:   make(TaskChan, bufSize),
-		OutChan:  make(TaskChan, bufSize),
+		getwork:  make(chan bool, bufSize),
+		kill:     make(chan bool, bufSize),
+		cancel:   make(chan *Chromosome, bufSize),
+		task:     make(chan *Chromosome, bufSize),
+		sendwork: make(chan *Chromosome, bufSize),
+		proved:   make(chan *Chromosome, bufSize),
 	}
 }
 
 func (m *Miner) Prove(chromo *Chromosome) {
-	m.InChan <- chromo
+	m.task <- chromo
+}
+
+func (m *Miner) Cancel(chromo *Chromosome) {
+	m.cancel <- chromo
 }
 
 func (m *Miner) GetMined() *Chromosome {
 	select {
-	case mined := <-m.OutChan:
+	case mined := <-m.proved:
 		return mined
 	default:
 		return nil
@@ -48,61 +52,81 @@ func (m *Miner) GetMined() *Chromosome {
 }
 
 func (m *Miner) Start() {
-	killChan := make(chan bool, 1)
-
-	go mineManager(m.CtrlChan, m.InChan, killChan)
-	go mineFacility(m.Difficulty, m.InChan, m.OutChan, killChan)
+	go mineManager(m)
+	go mineFacility(m)
 }
 
-func mineManager(ctrlCh ControlChan, inCh TaskChan, killCh chan bool) {
+func mineManager(m *Miner) {
 	var work *Chromosome
 
 	jobs := make([]*Chromosome, 0)
 
 	for {
-		cmd := <-ctrlCh
-		switch cmd.command {
-		case "new":
-			jobs = append(jobs, cmd.task)
-		case "cancel":
-			if work.Hash(0) == cmd.task.Hash(0) {
-				killCh <- true
+		select {
+		case t := <-m.task:
+			log.Println("miner new task", t)
+			jobs = append(jobs, t)
+		case <-m.getwork:
+			if len(jobs) == 0 {
+				log.Println("miner getwork and no work avail")
+				work = <-m.task
+				log.Println("miner received first task", work)
+				m.sendwork <- work
+			} else {
+				log.Println("miner getwork")
+				work, jobs = jobs[0], jobs[1:]
+				m.sendwork <- work
 			}
-
+		case t := <-m.cancel:
+			log.Println("miner cancel", t)
 			for i, v := range jobs {
-				if v.Hash(0) == cmd.task.Hash(0) {
+				if v == t {
 					jobs = append(jobs[:i], jobs[i+1:]...)
 					break
 				}
 			}
-		case "getwork":
-			work, jobs = jobs[0], jobs[:len(jobs)-1]
-			inCh <- work
-		default:
-			log.Println("miner received incorrect command", cmd.command)
+
+			if work == t {
+				m.kill <- true
+			}
 		}
 	}
 }
 
-func mineFacility(diff *big.Int,
-	inCh TaskChan, outCh TaskChan, killCh chan bool) {
+func mineFacility(m *Miner) {
 	for {
-		task := <-inCh
+		m.getwork <- true
+		task := <-m.sendwork
 
-		nonce := uint(0)
+		log.Printf("miner start mining at diff %020x\n", m.Difficulty)
+		startTime := time.Now()
+		m.nonce = 0
+		nonce := 0
 		for {
 			select {
-			case <-killCh:
-				log.Println("miner stopped at nonce", nonce, task)
+			case <-m.kill:
+				log.Println("miner killed at nonce", nonce, task)
 				break
 			default:
 			}
 
+			if time.Since(startTime) > 2*time.Second {
+				m.khs = float64(nonce-m.nonce) /
+					float64(time.Since(startTime).Seconds()) /
+					1000.0
+
+				startTime = time.Now()
+
+				m.nonce = nonce
+				log.Printf("miner reports hash rate at %.3f kh/s\n", m.khs)
+			}
+
 			hash := task.Hash(nonce)
-			if hash.Cmp(diff) <= 0 {
+			if hash.Cmp(m.Difficulty) <= 0 {
+				log.Println("miner successfully mined task at nonce", nonce)
 				task.Nonce = nonce
 				task.CurrHash = hash
-				outCh <- task
+				m.proved <- task
 				break
 			} else {
 				nonce += 1

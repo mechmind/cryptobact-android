@@ -2,8 +2,10 @@ package main
 
 import (
 	"cryptobact/engine"
+
 	"fmt"
 	"log"
+	"os"
 )
 
 type Updater struct{}
@@ -42,23 +44,7 @@ func (f Updater) Update(w *engine.World) {
 						//   6    1
 						//    5  2
 						//     43
-						if b.Angle < 45 {
-							fmt.Print("0")
-						} else if b.Angle < 90 {
-							fmt.Print("1")
-						} else if b.Angle < 135 {
-							fmt.Print("2")
-						} else if b.Angle < 180 {
-							fmt.Print("3")
-						} else if b.Angle < 225 {
-							fmt.Print("4")
-						} else if b.Angle < 270 {
-							fmt.Print("5")
-						} else if b.Angle < 315 {
-							fmt.Print("6")
-						} else {
-							fmt.Print("7")
-						}
+						fmt.Printf("%c", "01234566"[int(b.Angle)/45])
 					} else {
 						fmt.Print("E")
 					}
@@ -110,6 +96,9 @@ func between(x float64, y float64, stepX float64, stepY float64, i int, j int) b
 }
 
 func main() {
+	f, _ := os.OpenFile("bact.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	log.SetOutput(f)
+
 	log.Println("testing engine")
 	u := Updater{}
 	engine.Loop(u)

@@ -169,7 +169,7 @@ func GetAction(population *evo.Population, bact *evo.Bacteria, grid *Grid,
 	// FIXME replace with real target
 	//target_x := float64(world.Width) / 2.0
 	//target_y := float64(world.Height) / 2.0
-	if world.Tick%200 == 0 {
+	if world.Notch(200) {
 		bact.TargetX = math.Abs(rand.NormFloat64())*3 + 10.0
 		bact.TargetY = math.Abs(rand.NormFloat64())*3 + 10.0
 	}

@@ -18,11 +18,11 @@ type Chromosome struct {
 	Author   uint64
 	DNA      *DNA
 	//Time time.Time
-	Nonce uint
+	Nonce int
 	//Device DeviceId
 }
 
-func (c *Chromosome) Hash(nonce uint) *big.Int {
+func (c *Chromosome) Hash(nonce int) *big.Int {
 	h := sha1.New()
 	io.WriteString(h, fmt.Sprintf("%x{%s}T%dN%dD%d",
 		c.PrevHash,
@@ -31,4 +31,8 @@ func (c *Chromosome) Hash(nonce uint) *big.Int {
 	hash := big.NewInt(0)
 	hash.SetBytes(h.Sum(nil))
 	return hash
+}
+
+func (c *Chromosome) String() string {
+	return fmt.Sprintf("A:%d [%d] %s", c.Author, c.Nonce, c.DNA)
 }

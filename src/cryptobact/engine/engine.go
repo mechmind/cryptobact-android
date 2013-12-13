@@ -19,7 +19,7 @@ const (
 	FOOD_TICKS    = 20
 	FOOD_PER_TICK = 10
 
-	MINER_DIFF   = 149
+	MINER_DIFF   = 140
 	MINER_BUFFER = 255
 
 	INFECT_WITH_SIZE  = 4
@@ -46,7 +46,7 @@ func Loop(updater Updater) {
 		Author: uint64(rand.Int63()),
 		Miner:  miner}
 
-	world := &World{}
+	world := NewWorld()
 
 	traits := evo.TraitMap{
 		"lust": &evo.Trait{"111.1", 4},
@@ -77,9 +77,8 @@ func Loop(updater Updater) {
 
 	infektor.Serve()
 
-	world.Tick = 0
 	for {
-		world.SpawnFood(world.Tick)
+		world.SpawnFood()
 		grid.CalcWeights(world)
 
 		for _, population := range world.Populations {
@@ -89,7 +88,7 @@ func Loop(updater Updater) {
 		world.CleanFood()
 		updater.Update(world)
 
-		if world.Tick%100 == 0 {
+		if world.Notch(100) {
 			infection := infektor.Catch()
 			if infection != nil {
 				if infection.Chain.Author != chain.Author {
@@ -99,15 +98,11 @@ func Loop(updater Updater) {
 			}
 		}
 
-		if world.Tick%110 == 0 {
+		if world.Notch(110) {
 			infektor.Spread(world.Populations[0])
 		}
 
-		if world.Tick == 999 {
-			world.Tick = 0
-		} else {
-			world.Tick += 1
-		}
+		world.Step()
 	}
 }
 

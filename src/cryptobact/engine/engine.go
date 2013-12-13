@@ -48,7 +48,7 @@ func Loop(updater Updater) {
 
 	world := &World{}
 
-	traits := map[string]*evo.Trait{
+	traits := evo.TraitMap{
 		"lust": &evo.Trait{"111.1", 4},
 		"glut": &evo.Trait{"10101", 2},
 	}
@@ -102,8 +102,6 @@ func Loop(updater Updater) {
 		if world.Tick%110 == 0 {
 			infektor.Spread(world.Populations[0])
 		}
-
-		//log.Println(world.Populations[0].Bacts)
 
 		if world.Tick == 999 {
 			world.Tick = 0

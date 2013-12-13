@@ -3,6 +3,7 @@ package evo
 type Chromochain struct {
 	Author  uint64
 	Initial *Chromosome
+	Miner *Miner `json:"-"`
 	// @TBD
 }
 

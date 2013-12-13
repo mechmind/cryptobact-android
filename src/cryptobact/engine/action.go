@@ -109,8 +109,8 @@ func (a ActionFuck) Apply() {
 	child := a.Population.Fuck(b, a.Object)
 	a_coeff := float64(a.Population.GetGene(a.Object, 0))
 	b_coeff := float64(a.Population.GetGene(b, 0))
-	a_lust := float64(a.Population.GetAttitude(a.Object, "lust"))
-	b_lust := float64(a.Population.GetAttitude(b, "lust"))
+	a_lust := float64(a.Population.GetTrait(a.Object, "lust"))
+	b_lust := float64(a.Population.GetTrait(b, "lust"))
 
 	child.X = (a.Object.X + b.X) / 2
 	child.Y = (a.Object.Y + b.Y) / 2
@@ -143,7 +143,7 @@ func GetAction(population *evo.Population, bact *evo.Bacteria, grid *Grid,
 	}
 
 	if rand.Intn(10) == 5 {
-		for _, b := range population.GetBacts() {
+		for _, b := range population.Bacts {
 			if b.Energy > 0 && b.Born {
 				return ActionAttack{b, 30, world, population, bact}
 			}
@@ -159,7 +159,7 @@ func GetAction(population *evo.Population, bact *evo.Bacteria, grid *Grid,
 	}
 
 	if rand.Intn(300) == 5 {
-		for _, b := range population.GetBacts() {
+		for _, b := range population.Bacts {
 			if b.Energy > 0 && b.Born {
 				return ActionFuck{b, world, population, bact}
 			}
@@ -174,7 +174,7 @@ func GetAction(population *evo.Population, bact *evo.Bacteria, grid *Grid,
 		bact.TargetY = math.Abs(rand.NormFloat64())*3 + 10.0
 	}
 
-	log.Println(bact.TargetX, bact.TargetY)
+	//log.Println(bact.TargetX, bact.TargetY)
 
 	return ActionMove{bact.TargetX, bact.TargetY, world, population, bact}
 }

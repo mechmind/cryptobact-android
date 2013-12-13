@@ -1,47 +1,49 @@
 package evo
 
-import "log"
-import "fmt"
-import "math/rand"
+import (
+	"fmt"
+	"log"
+	"math/rand"
+	"strings"
+)
 
 var _ = fmt.Print
 var _ = log.Print
 
+type TraitMap map[string]*Trait
+
 type Population struct {
 	// @TODO author
-	Chain   *Chromochain
-	Options *PopulationOptions
+	Traits TraitMap
+	Chain  *Chromochain
+	Env    *Environment
 
-	Miner *Miner
-
-	bacts []*Bacteria
+	Bacts []*Bacteria
 }
 
-type PopulationOptions struct {
-	Attitudes           map[string]*Attitude
-	MutateProbability   float64
-	MutateRate          float64
-	RecombinationChance float64
-	RecombinationDrop   float64
+func (t TraitMap) String() string {
+	result := make([]string, 0)
+
+	for k, v := range t {
+		result = append(result, fmt.Sprintf("[%s] %s", k, v))
+	}
+
+	return strings.Join(result, "\n")
 }
 
-var DefaultPopulationOptions = &PopulationOptions{
-	Attitudes:           nil,
-	MutateProbability:   0.5,
-	MutateRate:          1.0,
-	RecombinationChance: 1.0,
-	RecombinationDrop:   10,
-}
-
-type Attitude struct {
+type Trait struct {
 	Pattern string
 	Max     uint
 }
 
-func NewPopulation(miner *Miner, chain *Chromochain,
-	options *PopulationOptions) *Population {
-	if options == nil {
-		options = DefaultPopulationOptions
+func (t *Trait) String() string {
+	return fmt.Sprintf("{%s}: --> %d", t.Pattern, t.Max)
+}
+
+func NewPopulation(chain *Chromochain, traits TraitMap,
+	env *Environment) *Population {
+	if env == nil {
+		env = DefaultEnvironment
 	}
 
 	bacts := make([]*Bacteria, 0)
@@ -50,25 +52,33 @@ func NewPopulation(miner *Miner, chain *Chromochain,
 		bacts = append(bacts, &Bacteria{Chromosome: c, Born: true})
 	}
 
-	return &Population{bacts: bacts, Options: options, Miner: miner,
-		Chain: chain}
+	return &Population{
+		Traits: traits,
+		Env:    env,
+		Chain:  chain,
+		Bacts:  bacts,
+	}
+}
+
+func (p *Population) Slice(bacts []*Bacteria) *Population {
+	return &Population{Bacts: bacts, Env: nil, Chain: p.Chain,
+		Traits: p.Traits}
 }
 
 func (p *Population) Fuck(a *Bacteria, b *Bacteria) *Bacteria {
 	new_dna := Crossover(a.Chromosome.DNA, b.Chromosome.DNA)
 
-	// @FIXME hardcode
-	new_dna.Mutate(p.Options.MutateProbability, p.Options.MutateRate)
+	new_dna.Mutate(p.Env.MutateProbability, p.Env.MutateRate)
 
-	second_recomb_change := p.Options.RecombinationChance
-	for _, attitude := range p.Options.Attitudes {
+	second_recomb_change := p.Env.RecombinationChance
+	for _, attitude := range p.Traits {
 		if new_dna.MatchPatternCount(attitude.Pattern) >= attitude.Max {
 			continue
 		}
 
 		if rand.Float64() >= second_recomb_change {
 			new_dna.Recombine(attitude.Pattern)
-			second_recomb_change /= p.Options.RecombinationDrop
+			second_recomb_change /= p.Env.RecombinationDrop
 		}
 	}
 
@@ -76,25 +86,21 @@ func (p *Population) Fuck(a *Bacteria, b *Bacteria) *Bacteria {
 		Chromosome: &Chromosome{Author: a.Chromosome.Author, DNA: new_dna},
 		Born:       false}
 
-	// mining here!
-	p.Miner.Mine(new_bacteria.Chromosome)
+	// @TODO hide interface
+	p.Chain.Miner.Prove(new_bacteria.Chromosome)
 
-	p.bacts = append(p.bacts, new_bacteria)
+	p.Bacts = append(p.Bacts, new_bacteria)
 
 	return new_bacteria
 }
 
-func (p *Population) GetBacts() []*Bacteria {
-	return p.bacts
-}
-
-func (p *Population) GetAttitude(b *Bacteria, attitude_id string) uint {
-	if p.Options.Attitudes == nil {
+func (p *Population) GetTrait(b *Bacteria, attitude_id string) uint {
+	if p.Traits == nil {
 		return 0
 	}
 
 	return b.Chromosome.DNA.MatchPatternCount(
-		p.Options.Attitudes[attitude_id].Pattern)
+		p.Traits[attitude_id].Pattern)
 }
 
 func (p *Population) GetGene(b *Bacteria, index uint) float64 {
@@ -105,25 +111,28 @@ func (p *Population) GetGene(b *Bacteria, index uint) float64 {
 func (p *Population) Kill(target *Bacteria) {
 	alive := make([]*Bacteria, 0)
 
-	for _, b := range p.bacts {
+	for _, b := range p.Bacts {
 		if b != target {
 			alive = append(alive, b)
 		}
 	}
 
-	p.bacts = alive
+	p.Bacts = alive
 }
 
-func (p *Population) CatchNewBorn() bool {
-	newborn := p.Miner.Extract()
-	if newborn != nil {
-		for _, b := range p.bacts {
-			if b.Chromosome == newborn {
-				b.Born = true
-				return true
-			}
+func (p *Population) DeliverChild() {
+	newborn := p.Chain.Miner.GetMined()
+	if newborn == nil {
+		return
+	}
+	for _, b := range p.Bacts {
+		if b.Chromosome == newborn {
+			b.Born = true
+			return
 		}
 	}
+}
 
-	return false
+func (p *Population) String() string {
+	return fmt.Sprintf("TRAITS:\n%s\nBACTS:\n%s\n", p.Traits, p.Bacts)
 }

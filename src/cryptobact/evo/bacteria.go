@@ -6,14 +6,14 @@ type Bacteria struct {
 	Chromosome    *Chromosome
 	TTL           int
 	Energy        float64
-	X             float64
-	Y             float64
-	Angle         float64
+	X             float64 `json:"-"`
+	Y             float64 `json:"-"`
+	Angle         float64 `json:"-"`
 	Born          bool
-	Speed         float64
-	RotationSpeed float64
-	TargetX       float64
-	TargetY       float64
+	Speed         float64 `json:"-"`
+	RotationSpeed float64 `json:"-"`
+	TargetX       float64 `json:"-"`
+	TargetY       float64 `json:"-"`
 }
 
 func (b *Bacteria) String() string {

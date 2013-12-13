@@ -3,20 +3,32 @@ package engine
 import (
 	"cryptobact/evo"
 	"cryptobact/infektor"
+	"cryptobact/infektor/transport"
+
 	"log"
 	"math/rand"
 	"runtime"
 	"time"
 )
 
+var _ = log.Println
+
 const (
 	WIDTH         = 16
 	HEIGHT        = 24
 	FOOD_TICKS    = 20
 	FOOD_PER_TICK = 10
-)
 
-var Miner *evo.Miner
+	MINER_DIFF   = 149
+	MINER_BUFFER = 255
+
+	INFECT_WITH_SIZE  = 4
+	INFECT_MULTIPLIER = 2
+
+	INFECT_PORT_1 = 1234
+	INFECT_PORT_2 = 2345
+	INFECT_PORT_3 = 3456
+)
 
 type Updater interface {
 	Update(*World)
@@ -27,22 +39,18 @@ func Loop(updater Updater) {
 
 	rand.Seed(time.Now().UnixNano())
 
-	Miner = evo.NewMiner(149)
-	Miner.Start()
+	miner := evo.NewMiner(MINER_DIFF, MINER_BUFFER)
+	miner.Start()
 
-	chain := &evo.Chromochain{Author: uint64(rand.Int63())}
+	chain := &evo.Chromochain{
+		Author: uint64(rand.Int63()),
+		Miner:  miner}
 
 	world := &World{}
 
-	options := &evo.PopulationOptions{
-		Attitudes: map[string]*evo.Attitude{
-			"lust": &evo.Attitude{"111.1", 4},
-			"glut": &evo.Attitude{"10101", 2},
-		},
-		MutateProbability:   0.5,
-		MutateRate:          1,
-		RecombinationChance: 1.0,
-		RecombinationDrop:   10,
+	traits := map[string]*evo.Trait{
+		"lust": &evo.Trait{"111.1", 4},
+		"glut": &evo.Trait{"10101", 2},
 	}
 
 	grid := make(Grid, WIDTH)
@@ -55,20 +63,19 @@ func Loop(updater Updater) {
 	world.FoodTicks = FOOD_TICKS
 	world.FoodPerTick = FOOD_PER_TICK
 	world.Populations = []*evo.Population{
-		evo.NewPopulation(Miner, chain, options),
+		evo.NewPopulation(chain, traits, nil),
 	}
 
-	infektor := infektor.NewInfektor([]uint{
-		2345,
-		4567,
-		5678,
-	},
-	)
+	infektor := infektor.NewInfektor(INFECT_WITH_SIZE, INFECT_MULTIPLIER,
+		transport.NewUDP([]int{
+			INFECT_PORT_1,
+			INFECT_PORT_2,
+			INFECT_PORT_3,
+		}))
 
 	InitPopulation(world, world.Populations[0])
 
-	infections := infektor.Listen()
-	infektor.Spread(world.Populations[0], 1*time.Second)
+	infektor.Serve()
 
 	world.Tick = 0
 	for {
@@ -79,10 +86,24 @@ func Loop(updater Updater) {
 			SimulatePopulation(&grid, world, population)
 		}
 
-		ProcessInfections(world, infections)
-
 		world.CleanFood()
 		updater.Update(world)
+
+		if world.Tick%100 == 0 {
+			infection := infektor.Catch()
+			if infection != nil {
+				if infection.Chain.Author != chain.Author {
+					log.Println("received infection size", len(infection.Bacts))
+					log.Println(infection)
+				}
+			}
+		}
+
+		if world.Tick%110 == 0 {
+			infektor.Spread(world.Populations[0])
+		}
+
+		//log.Println(world.Populations[0].Bacts)
 
 		if world.Tick == 999 {
 			world.Tick = 0
@@ -93,7 +114,7 @@ func Loop(updater Updater) {
 }
 
 func SimulatePopulation(grid *Grid, world *World, population *evo.Population) {
-	for _, bact := range population.GetBacts() {
+	for _, bact := range population.Bacts {
 		if !bact.Born {
 			continue
 		}
@@ -101,49 +122,16 @@ func SimulatePopulation(grid *Grid, world *World, population *evo.Population) {
 		a.Apply()
 	}
 
-	population.CatchNewBorn()
+	population.DeliverChild()
 	world.GetOld(population)
 }
 
 func InitPopulation(world *World, population *evo.Population) {
-	for _, b := range population.GetBacts() {
+	for _, b := range population.Bacts {
 		b.X = rand.Float64() * float64(world.Width)
 		b.Y = rand.Float64() * float64(world.Height)
 		b.TTL = int(10000 * float64(population.GetGene(b, 7)) / 10)
 		b.Energy = 1000 * float64(population.GetGene(b, 11)) / 10
 		b.RotationSpeed = 10.0 + float64(population.GetGene(b, 4)/20)
-	}
-}
-
-func ProcessInfections(world *World, infections chan *evo.Chromosome) {
-	stop_for := false
-	for !stop_for {
-		select {
-		case new_chromo := <-infections:
-			new_chain := &evo.Chromochain{
-				Author:  new_chromo.Author,
-				Initial: new_chromo}
-
-			skip := false
-			for _, p := range world.Populations {
-				if p.Chain.Author == new_chromo.Author {
-					skip = true
-					break
-				}
-			}
-
-			if skip {
-				continue
-			}
-
-			log.Println("INFECT", new_chain.Author)
-
-			new_population := evo.NewPopulation(Miner, new_chain, nil)
-			InitPopulation(world, new_population)
-
-			world.Populations = append(world.Populations, new_population)
-		default:
-			stop_for = true
-		}
 	}
 }

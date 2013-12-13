@@ -1,7 +1,10 @@
 package engine
 
-import "math/rand"
-import "cryptobact/evo"
+import (
+	"cryptobact/evo"
+
+	"math/rand"
+)
 
 type World struct {
 	Populations []*evo.Population
@@ -42,7 +45,7 @@ func (w *World) CleanFood() {
 }
 
 func (w *World) GetOld(population *evo.Population) {
-	for _, b := range population.GetBacts() {
+	for _, b := range population.Bacts {
 		if !b.Born {
 			continue
 		}

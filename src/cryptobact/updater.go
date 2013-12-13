@@ -89,7 +89,7 @@ func (r *Updater) handleUpdate(w *engine.World) {
 		} else {
 			pcolor = colorSet[pid]
 		}
-		for _, b := range p.GetBacts() {
+		for _, b := range p.Bacts {
 			//if b != nil && b.Born {
 			if b != nil {
 				if b.Born {

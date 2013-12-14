@@ -50,7 +50,7 @@ func (ifk *Infektor) Spread(pop *evo.Population) {
 		}
 
 		log.Println("spreading infektion with amount of", len(bacts))
-		piligrims := pop.Slice(bacts)
+		piligrims := pop.Splice(bacts)
 		ifk.transport.Infect(piligrims)
 	}
 }

@@ -103,6 +103,10 @@ func Loop(updater Updater) {
 		world.SpawnFood()
 
 		for _, population := range world.Populations {
+			if world.Notch(500) {
+				log.Println(population)
+			}
+
 			SimulatePopulation(world, population)
 		}
 

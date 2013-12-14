@@ -62,7 +62,23 @@ func NewPopulation(chain *Chromochain, traits TraitMap,
 	}
 }
 
-func (p *Population) Slice(bacts []*Bacteria) *Population {
+func (p *Population) Splice(bacts []*Bacteria) *Population {
+	rest := make([]*Bacteria, 0)
+	for _, b := range p.Bacts {
+		skip := false
+		for _, v2 := range bacts {
+			if b == v2 {
+				skip = true
+				break
+			}
+		}
+		if !skip {
+			rest = append(rest, b)
+		}
+	}
+
+	p.Bacts = rest
+
 	return &Population{Bacts: bacts, Env: nil, Chain: p.Chain,
 		Traits: p.Traits}
 }

@@ -4,8 +4,8 @@ import "fmt"
 
 // base values common for all bacterias
 const (
-	B_BASE_ENERGY      = 1000 // energy points at birth
-	B_BASE_TTL         = 6000  // time to live in ticks
+	B_BASE_ENERGY      = 10   // energy points at birth
+	B_BASE_TTL         = 6000 // time to live in ticks
 	B_BASE_SPEED       = 0.05 // speed in pixels per tick
 	B_BASE_ROTATION    = 0.05 // rotation speed in degrees per tick
 	B_BASE_METABOLISM  = 0.75 // which part of eaten food becomes an energy
@@ -16,7 +16,7 @@ const (
 	B_BASE_LUST        = 0.5  // love to food {0..1}
 	B_BASE_GLUT        = 0.5  // love to fuck {0..1}
 	B_BASE_AGGRESSION  = 0.5  // aggression {0..1}
-	B_BASE_FUCK_ENERGY = 50   // energy points required to fuck
+	B_BASE_FUCK_ENERGY = 100  // energy points required to fuck
 	B_BASE_EAT_DIST    = 5    // maximum eat distance
 	B_BASE_FUCK_DIST   = 5    // maximum fuck distance
 	B_BASE_ATTACK_DIST = 5    // maximum attack distance

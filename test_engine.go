@@ -15,7 +15,6 @@ func (f Updater) Update(w *engine.World) {
 }
 
 func DrawMap(w *engine.World) {
-	return
 	maxCol := 40
 	maxRow := 40
 

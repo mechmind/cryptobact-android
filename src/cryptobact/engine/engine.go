@@ -19,7 +19,7 @@ const (
 	WIDTH  = 16
 	HEIGHT = 24
 
-	FOOD_TICKS    = 20
+	FOOD_TICKS    = 500
 	FOOD_PER_TICK = 10
 
 	MINER_BASE_DIFF = 145
@@ -103,6 +103,7 @@ func Loop(updater Updater) {
 		world.SpawnFood()
 
 		for _, population := range world.Populations {
+			log.Println(population)
 			SimulatePopulation(world, population)
 		}
 
@@ -183,7 +184,11 @@ func SimulatePopulation(world *World, population *evo.Population) {
 			continue
 		}
 		a := GetAction(population, bact, world)
-		a.Apply()
+		if a != nil {
+			a.Apply()
+		} else {
+			log.Println("leave me here comrades", bact)
+		}
 	}
 
 	population.DeliverChild()

@@ -78,7 +78,7 @@ func mineManager(m *Miner) {
 	for {
 		select {
 		case t := <-m.task:
-			log.Println("miner new task", t)
+			//log.Println("miner new task", t)
 			jobs = append(jobs, t)
 		case <-m.getwork:
 			if len(jobs) == 0 {

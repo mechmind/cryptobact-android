@@ -49,7 +49,9 @@ func NewPopulation(chain *Chromochain, traits TraitMap,
 	bacts := make([]*Bacteria, 0)
 	chromos := chain.GetChromosomes()
 	for _, c := range chromos {
-		bacts = append(bacts, &Bacteria{Chromosome: c, Born: true})
+		new_bacteria := NewBacteria(c)
+		new_bacteria.Born = true
+		bacts = append(bacts, new_bacteria)
 	}
 
 	return &Population{

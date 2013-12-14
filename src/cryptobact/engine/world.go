@@ -13,8 +13,8 @@ const (
 	MAX_ACID_CON      = 0.5
 	MAX_CLOT_SPOTS    = 5
 	MAX_CLOT_DENS     = 0.5
-	MIN_FOOD_CALORIES = 100.0
-	MAX_FOOD_CALORIES = 200.0
+	MIN_FOOD_CALORIES = 10.0
+	MAX_FOOD_CALORIES = 20.0
 )
 
 type World struct {

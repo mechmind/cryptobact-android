@@ -19,7 +19,7 @@ const (
 	WIDTH  = 16
 	HEIGHT = 24
 
-	FOOD_TICKS    = 200
+	FOOD_TICKS    = 300
 	FOOD_PER_TICK = 10
 
 	MINER_BASE_DIFF = 146
@@ -69,7 +69,7 @@ func Loop(updater Updater) {
 	world := NewWorld()
 
 	traits := evo.TraitMap{
-		"lust": &evo.Trait{"111.1", 4},
+		"lust": &evo.Trait{"111.111", 4},
 		"glut": &evo.Trait{"10101", 2},
 	}
 
@@ -105,7 +105,6 @@ func Loop(updater Updater) {
 
 		newborn := miner.GetMined()
 
-		minerStartedFor := miner.GetStarted()
 		for _, population := range world.Populations {
 			if world.Notch(1000) {
 				log.Println(population)
@@ -116,16 +115,12 @@ func Loop(updater Updater) {
 			}
 
 			SimulatePopulation(world, population)
-			for _, b := range population.Bacts {
-				if newborn != nil {
+			if newborn != nil && newborn.Author == population.Chain.Author {
+				for _, b := range population.Bacts {
 					if b.Chromosome == newborn {
 						b.RenewTTL()
 						b.Born = true
 					}
-				}
-
-				if b.Chromosome == minerStartedFor {
-					b.Labouring = true
 				}
 			}
 		}
@@ -164,8 +159,6 @@ func Loop(updater Updater) {
 
 		realTPS := EstimateTPS(world.GetSmallTick(), startTime, &realTPSAvg)
 
-		//targetTPS = CorrectTargetTPS(realTPS, targetTPS)
-
 		if world.Notch(500) {
 			log.Printf("current miner hash rate is %.3f kh/s\n",
 				miner.GetHashRate())
@@ -198,6 +191,7 @@ func EstimateTPS(smallTick int, startTime time.Time, TPSAvg *[]int) int {
 }
 
 func SimulatePopulation(world *World, population *evo.Population) {
+	t := time.Now()
 	for _, bact := range population.Bacts {
 		a := GetAction(population, bact, world)
 		if a != nil {
@@ -206,6 +200,7 @@ func SimulatePopulation(world *World, population *evo.Population) {
 
 		//log.Println(a)
 	}
+	log.Println(time.Since(t))
 
 	world.GetOld(population)
 	world.ApplyAcid(population)

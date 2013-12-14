@@ -70,11 +70,11 @@ func (a ActionMove) Apply() {
 		}
 	}
 
-	dx := (xt - x) / math.Abs(x-xt) * b.GetSpeed() / 100.0
-	dy := (yt - y) / math.Abs(y-yt) * b.GetSpeed() / 100.0
+	dx := (xt-x)/math.Abs(x-xt)*b.GetSpeed()/100.0 + b.Inertia.X*b.GetCollisionSpeed()
+	dy := (yt-y)/math.Abs(y-yt)*b.GetSpeed()/100.0 + b.Inertia.Y*b.GetCollisionSpeed()
 
-	b.X += rand.NormFloat64()*0.01 + dx
-	b.Y += rand.NormFloat64()*0.01 + dy
+	b.X += rand.NormFloat64()*b.GetHysteria() + dx
+	b.Y += rand.NormFloat64()*b.GetHysteria() + dy
 }
 
 type ActionInert struct {
@@ -148,18 +148,38 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 		return ActionDie{b, p}
 	}
 
-	// process inertion after collision
-	if b.Inertia != nil {
-		return ActionInert{b}
+	if b.Inertia == nil {
+		b.Inertia = &evo.Inertia{}
+	}
+
+	//// process inertion after collision
+	inertiaLen := dist(0, 0, b.Inertia.X, b.Inertia.Y)
+	if inertiaLen > 1e-5 {
+		// @TODO remove hardcode
+		b.Inertia.X *= b.GetCollisionInertia()
+		b.Inertia.Y *= b.GetCollisionInertia()
+
+		if !b.Born {
+			return ActionMove{b,
+				b.X + b.Inertia.X,
+				b.Y + b.Inertia.Y}
+		}
 	}
 
 	// detect collision and set inertion vector if required
 	n_bact := w.GetNearestBact(b)
-	n_dist := dist(b.X, b.Y, n_bact.X, n_bact.Y)
-	if n_dist < b.GetCollisionDist() {
-		ix, iy := getRunawayPoint(b, n_bact.X, n_bact.Y)
-		b.Inertia = &evo.Inertia{ix, iy}
-		return ActionInert{b}
+	if n_bact != nil {
+		n_dist := dist(b.X, b.Y, n_bact.X, n_bact.Y)
+		if n_dist < b.GetCollisionDist() {
+			//ix, iy := getRunawayPoint(b, n_bact.X, n_bact.Y)
+			elastic := 1.0
+			if !n_bact.Born || !b.Born {
+				elastic = 0.1
+			}
+			b.Inertia = &evo.Inertia{
+				(b.X - n_bact.X) * elastic,
+				(b.Y - n_bact.Y) * elastic}
+		}
 	}
 
 	if !b.Born {

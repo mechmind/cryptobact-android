@@ -1,13 +1,5 @@
 package main
 
-/*
-#include <stdlib.h>
-#include <jni.h>
-#include <android/input.h>
-#include <GLES2/gl2.h>
-*/
-import "C"
-
 import (
 	"cryptobact/engine"
 

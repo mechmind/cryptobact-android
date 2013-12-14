@@ -12,6 +12,7 @@ import "C"
 import (
 	"cryptobact/engine"
 	"cryptobact/gl"
+	"cryptobact/ui"
 	"log"
 	"math"
 	"runtime"
@@ -30,33 +31,15 @@ const (
 var ticks float64
 
 type game struct {
-	prog                uint
-	width, height       int
-	offsetUni, colorUni int
-	posAttr             int
-	mvpUni              int
-	mvp                 []float32
+	width, height int
+	mvp           []float32
 
-	mu               sync.Mutex // Protects offsetX, offsetY
-	offsetX, offsetY float32
+	fieldScreen   *ui.FieldScreen
+	presetScreen  *ui.PresetScreen
+	currentScreen ui.UInteractive
 
-	// buffer ids
-	gridBufId                           uint
-	sliderLinesBufId, sliderTriagsBufId uint
-
-	verts []gl.ColoredVertex
-
-	updater *Updater
-	render  *Render
-
-	sliders          []Slider
-	sliderLineBuffer []gl.ColoredVertex
-	sliderTrBuffer   []gl.ColoredVertex
-
-	gameScreen   *gameScreen
-	presetScreen *presetScreen
-
-	currentScreen UInteractive
+	updater     *Updater
+	fieldRender *ui.FieldRender
 }
 
 var g game

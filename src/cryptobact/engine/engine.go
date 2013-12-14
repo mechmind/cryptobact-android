@@ -14,8 +14,9 @@ import (
 var _ = log.Println
 
 const (
-	WIDTH         = 16
-	HEIGHT        = 24
+	WIDTH  = 16
+	HEIGHT = 24
+
 	FOOD_TICKS    = 20
 	FOOD_PER_TICK = 10
 
@@ -53,11 +54,6 @@ func Loop(updater Updater) {
 		"glut": &evo.Trait{"10101", 2},
 	}
 
-	grid := make(Grid, WIDTH)
-	for x := 0; x < WIDTH; x++ {
-		grid[x] = make([]Cell, HEIGHT)
-	}
-
 	world.Width = WIDTH
 	world.Height = HEIGHT
 	world.FoodTicks = FOOD_TICKS
@@ -77,12 +73,13 @@ func Loop(updater Updater) {
 
 	infektor.Serve()
 
+	world.SpawnAcid()
+	world.SpawnClot()
 	for {
 		world.SpawnFood()
-		grid.CalcWeights(world)
 
 		for _, population := range world.Populations {
-			SimulatePopulation(&grid, world, population)
+			SimulatePopulation(world, population)
 		}
 
 		world.CleanFood()
@@ -106,17 +103,19 @@ func Loop(updater Updater) {
 	}
 }
 
-func SimulatePopulation(grid *Grid, world *World, population *evo.Population) {
+func SimulatePopulation(world *World, population *evo.Population) {
 	for _, bact := range population.Bacts {
 		if !bact.Born {
 			continue
 		}
-		a := GetAction(population, bact, grid, world)
+		a := GetAction(population, bact, world)
 		a.Apply()
 	}
 
 	population.DeliverChild()
 	world.GetOld(population)
+	world.ApplyAcid(population)
+	world.ApplyClot(population)
 }
 
 func InitPopulation(world *World, population *evo.Population) {

@@ -46,7 +46,7 @@ func (f Updater) Update(w *engine.World) {
 						//     43
 						fmt.Printf("%c", "01234566"[int(b.Angle)/45])
 					} else {
-						fmt.Print("E")
+						fmt.Print("o")
 					}
 					printed = true
 					break
@@ -63,6 +63,26 @@ func (f Updater) Update(w *engine.World) {
 				}
 
 				fmt.Print("F")
+				printed = true
+				break
+			}
+
+			for _, a := range w.Acid {
+				if !between(a.X, a.Y, stepX, stepY, x, y) {
+					continue
+				}
+
+				fmt.Print("A")
+				printed = true
+				break
+			}
+
+			for _, c := range w.Clot {
+				if !between(c.X, c.Y, stepX, stepY, x, y) {
+					continue
+				}
+
+				fmt.Print("C")
 				printed = true
 				break
 			}

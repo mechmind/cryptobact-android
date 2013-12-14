@@ -133,14 +133,21 @@ func (a ActionDie) Apply() {
 	a.Population.Kill(b)
 }
 
-func GetAction(population *evo.Population, bact *evo.Bacteria, grid *Grid,
+func GetAction(population *evo.Population, bact *evo.Bacteria,
 	world *World) Action {
-	// FIXME rewrite without random
-	//actions := []string{"move", "attack", "eat", "fuck", "die"}
-	//
 	if bact.TTL <= 0 || bact.Energy < 0 {
 		return ActionDie{world, population, bact}
 	}
+
+	// params:
+	//   aggressiveness {0..1}
+	//   hunger {0..1}
+	//   fertility {0..1}
+	// resists:
+	//   acid {0..1}
+	//   clot {0..1}
+
+	// 
 
 	if rand.Intn(10) == 5 {
 		for _, b := range population.Bacts {
@@ -173,8 +180,6 @@ func GetAction(population *evo.Population, bact *evo.Bacteria, grid *Grid,
 		bact.TargetX = math.Abs(rand.NormFloat64())*3 + 10.0
 		bact.TargetY = math.Abs(rand.NormFloat64())*3 + 10.0
 	}
-
-	//log.Println(bact.TargetX, bact.TargetY)
 
 	return ActionMove{bact.TargetX, bact.TargetY, world, population, bact}
 }

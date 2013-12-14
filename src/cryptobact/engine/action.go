@@ -100,6 +100,7 @@ type ActionAttack struct {
 
 func (a ActionAttack) Apply() {
 	a.Object.Energy -= a.Bact.GetDamage()
+	a.Bact.Energy += a.Bact.GetDamage() * a.Bact.Chromosome.DNA.GetNormGene(12)
 }
 
 type ActionEat struct {

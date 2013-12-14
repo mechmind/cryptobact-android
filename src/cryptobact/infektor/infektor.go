@@ -46,7 +46,7 @@ func (ifk *Infektor) Spread(pop *evo.Population) {
 
 	if len(bacts) >= int(float64(ifk.amount)*ifk.rate) {
 		log.Println("spreading infektion with amount of", ifk.amount)
-		piligrims := pop.Splice(bacts[:ifk.amount])
+		piligrims := pop.Splice(bacts[:ifk.amount-1])
 		ifk.transport.Infect(piligrims)
 	}
 }

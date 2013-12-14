@@ -167,8 +167,22 @@ func (w *World) GetNearestAcid(b *evo.Bacteria) *Acid {
 
 // returns the nearest enemy bacteria
 func (w *World) GetNearestEnemy(b *evo.Bacteria) *evo.Bacteria {
-	// FIXME implement
-	return nil
+	min_dist := math.Inf(0)
+	var result *evo.Bacteria
+	for _, p := range w.Populations {
+	outerLoop:
+		for _, f := range p.Bacts {
+			if f.Chromosome.Author == b.Chromosome.Author {
+				continue outerLoop
+			}
+			dist := dist(b.X, b.Y, f.X, f.Y)
+			if dist < min_dist {
+				min_dist = dist
+				result = f
+			}
+		}
+	}
+	return result
 }
 
 // returns the nearest fellow bacteria

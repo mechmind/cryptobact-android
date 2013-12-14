@@ -109,7 +109,7 @@ func (p *Population) Fuck(a *Bacteria, b *Bacteria) *Bacteria {
 
 	// @TODO hide interface
 	p.Chain.Miner.Prove(new_bacteria.Chromosome,
-		int(a.Chromosome.DNA.Diff(new_dna) + b.Chromosome.DNA.Diff(new_dna)) / 2)
+		int(a.Chromosome.DNA.Diff(new_dna)+b.Chromosome.DNA.Diff(new_dna))/2)
 
 	p.Bacts = append(p.Bacts, new_bacteria)
 
@@ -141,20 +141,20 @@ func (p *Population) Kill(target *Bacteria) {
 	p.Bacts = alive
 }
 
-func (p *Population) DeliverChild() *Bacteria {
-	newborn := p.Chain.Miner.GetMined()
-	if newborn == nil {
-		return nil
-	}
-	for _, b := range p.Bacts {
-		if b.Chromosome == newborn {
-			b.Born = true
-			return b
-		}
-	}
+//func (p *Population) DeliverChild() *Bacteria {
+//    newborn := p.Chain.Miner.GetMined()
+//    if newborn == nil {
+//        return nil
+//    }
+//    for _, b := range p.Bacts {
+//        if b.Chromosome == newborn {
+//            b.Born = true
+//            return b
+//        }
+//    }
 
-	return nil
-}
+//    return nil
+//}
 
 func (p *Population) String() string {
 	result := make([]string, 0)

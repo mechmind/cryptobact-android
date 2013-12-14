@@ -103,14 +103,27 @@ func Loop(updater Updater) {
 
 		world.SpawnFood()
 
+		newborn := miner.GetMined()
+
 		minerStartedFor := miner.GetStarted()
 		for _, population := range world.Populations {
 			if world.Notch(1000) {
 				log.Println(population)
 			}
 
+			if world.Notch(110) {
+				infektor.Spread(population)
+			}
+
 			SimulatePopulation(world, population)
 			for _, b := range population.Bacts {
+				if newborn != nil {
+					if b.Chromosome == newborn {
+						b.RenewTTL()
+						b.Born = true
+					}
+				}
+
 				if b.Chromosome == minerStartedFor {
 					b.Labouring = true
 				}
@@ -140,10 +153,6 @@ func Loop(updater Updater) {
 					world.Populations = append(world.Populations, infection)
 				}
 			}
-		}
-
-		if world.Notch(110) {
-			infektor.Spread(world.Populations[0])
 		}
 
 		world.Step()
@@ -198,10 +207,6 @@ func SimulatePopulation(world *World, population *evo.Population) {
 		//log.Println(a)
 	}
 
-	child := population.DeliverChild()
-	if child != nil {
-		child.RenewTTL()
-	}
 	world.GetOld(population)
 	world.ApplyAcid(population)
 }

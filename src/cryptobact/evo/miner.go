@@ -5,6 +5,8 @@ import (
 	"log"
 	"math/big"
 	"time"
+
+	"math/rand"
 )
 
 var _ = fmt.Print
@@ -104,7 +106,8 @@ func mineManager(m *Miner) {
 				m.sendwork <- work
 			} else {
 				log.Println("miner getwork")
-				work, jobs = jobs[0], jobs[1:]
+				pos := rand.Intn(len(jobs))
+				work, jobs = jobs[pos], append(jobs[:pos], jobs[pos+1:]...)
 				m.sendwork <- work
 			}
 		case t := <-m.cancel:

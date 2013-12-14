@@ -103,7 +103,6 @@ func Loop(updater Updater) {
 		world.SpawnFood()
 
 		for _, population := range world.Populations {
-			log.Println(population)
 			SimulatePopulation(world, population)
 		}
 

@@ -140,6 +140,9 @@ func (w *World) GetNearestFood(b *evo.Bacteria) *Food {
 	min_dist := math.Inf(0)
 	var result *Food
 	for _, f := range w.Food {
+		if f.Eaten {
+			continue
+		}
 		dist := dist(b.X, b.Y, f.X, f.Y)
 		if dist < min_dist {
 			result = f

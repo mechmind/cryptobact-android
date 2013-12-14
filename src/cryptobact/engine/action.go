@@ -173,7 +173,7 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 		}
 	}
 
-	if n_acid := w.GetNearestFood(b); n_acid != nil {
+	if n_acid := w.GetNearestAcid(b); n_acid != nil {
 		acid_dist := dist(n_acid.X, n_acid.Y, b.X, b.Y)
 		weight := b.GetAcidResist() / acid_dist
 		if weight > max_weight {

@@ -103,11 +103,6 @@ func (p *Population) GetTrait(b *Bacteria, attitude_id string) uint {
 		p.Traits[attitude_id].Pattern)
 }
 
-func (p *Population) GetGene(b *Bacteria, index uint) float64 {
-	genes := b.Chromosome.DNA.Genes()
-	return float64(genes[int(index)%len(genes)])
-}
-
 func (p *Population) Kill(target *Bacteria) {
 	alive := make([]*Bacteria, 0)
 

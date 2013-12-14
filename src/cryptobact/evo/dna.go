@@ -155,6 +155,12 @@ func (dna *DNA) Genes() []uint {
 	return genes
 }
 
+func (dna *DNA) GetNormGene(index int) float64 {
+	genes := dna.Genes()
+	return float64(genes[int(index)%len(genes)]) /
+		float64(1<<GENE_MAX_LENGTH)
+}
+
 func (dna *DNA) MatchPatternCount(pattern string) uint {
 	count := uint(0)
 	for i := 0; i < dna.Length; i++ {

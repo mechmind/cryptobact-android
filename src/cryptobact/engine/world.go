@@ -92,7 +92,10 @@ func (w *World) Step() {
 }
 
 func (w *World) Notch(notch int) bool {
-	if w.Tick.Mod(w.Tick, big.NewInt(int64(notch))) == big.NewInt(0) {
+	var mod big.Int
+	mod.Set(w.Tick)
+
+	if mod(w.Tick, big.NewInt(int64(notch))) == big.NewInt(0) {
 		return true
 	} else {
 		return false

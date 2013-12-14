@@ -107,7 +107,7 @@ func (b *Bacteria) GetLust() float64 {
 // FIXME get coeff from DNA
 func (b *Bacteria) GetGlut() float64 {
 	coeff := 0.0
-	result := B_BASE_GLUT + B_BASE_GLUT*coeff
+	result := (B_BASE_GLUT+B_BASE_GLUT*coeff)/(float64(b.Energy)*0.001) + 0.01
 	return result
 }
 

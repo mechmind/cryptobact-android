@@ -93,9 +93,6 @@ func (w *World) CleanFood() {
 // makes bacteries a little older
 func (w *World) GetOld(population *evo.Population) {
 	for _, b := range population.Bacts {
-		if !b.Born {
-			continue
-		}
 		b.TTL -= 1
 	}
 }

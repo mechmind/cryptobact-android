@@ -5,7 +5,7 @@ import "fmt"
 // base values common for all bacterias
 const (
 	B_BASE_ENERGY       = 200  // energy points at birth
-	B_BASE_TTL          = 6000 // time to live in ticks
+	B_BASE_TTL          = 500 // time to live in ticks
 	B_BASE_SPEED        = 0.5  // speed in pixels per tick
 	B_BASE_ROTATION     = 0.5  // rotation speed in degrees per tick
 	B_BASE_METABOLISM   = 0.75 // which part of eaten food becomes an energy

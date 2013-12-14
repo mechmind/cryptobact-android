@@ -4,8 +4,8 @@ import (
 	"cryptobact/evo"
 
 	"math"
-	"math/rand"
 	"math/big"
+	"math/rand"
 )
 
 const (
@@ -53,7 +53,7 @@ func (w *World) SpawnClot() {
 
 // randomly spawns food
 func (w *World) SpawnFood() {
-	if w.Notch(w.FoodTicks) {
+	if !w.Notch(w.FoodTicks) {
 		return
 	}
 
@@ -92,14 +92,17 @@ func (w *World) Step() {
 }
 
 func (w *World) Notch(notch int) bool {
-	var mod big.Int
-	mod.Set(w.Tick)
-
-	if mod(w.Tick, big.NewInt(int64(notch))) == big.NewInt(0) {
+	if w.GetSmallTick()%notch == 0 {
 		return true
 	} else {
 		return false
 	}
+}
+
+func (w *World) GetSmallTick() int {
+	var small big.Int
+	small.Set(w.Tick)
+	return int(small.Mod(&small, big.NewInt(2<<16)).Uint64())
 }
 
 // decreases energy if bacteria is near an acid spot

@@ -147,7 +147,7 @@ func GetAction(population *evo.Population, bact *evo.Bacteria,
 	//   acid {0..1}
 	//   clot {0..1}
 
-	// 
+	//
 
 	if rand.Intn(10) == 5 {
 		for _, b := range population.Bacts {

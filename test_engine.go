@@ -11,6 +11,7 @@ import (
 type Updater struct{}
 
 func (f Updater) Update(w *engine.World) {
+	return
 	maxCol := 40
 	maxRow := 40
 

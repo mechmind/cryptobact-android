@@ -21,10 +21,8 @@ type Miner struct {
 	proved     chan *Chromosome
 }
 
-func NewMiner(difficulty uint, bufSize int) *Miner {
-	threshold := big.NewInt(1)
-	threshold.Lsh(threshold, difficulty)
-	return &Miner{Difficulty: threshold,
+func NewMiner(difficulty int, bufSize int) *Miner {
+	m := &Miner{
 		getwork:  make(chan bool, bufSize),
 		kill:     make(chan bool, bufSize),
 		cancel:   make(chan *Chromosome, bufSize),
@@ -32,6 +30,16 @@ func NewMiner(difficulty uint, bufSize int) *Miner {
 		sendwork: make(chan *Chromosome, bufSize),
 		proved:   make(chan *Chromosome, bufSize),
 	}
+
+	m.SetThreshold(difficulty)
+
+	return m
+}
+
+func (m *Miner) SetThreshold(difficulty int) {
+	threshold := big.NewInt(1)
+	threshold.Lsh(threshold, uint(difficulty))
+	m.Difficulty = threshold
 }
 
 func (m *Miner) Prove(chromo *Chromosome) {
@@ -54,6 +62,10 @@ func (m *Miner) GetMined() *Chromosome {
 func (m *Miner) Start() {
 	go mineManager(m)
 	go mineFacility(m)
+}
+
+func (m *Miner) GetHashRate() float64 {
+	return m.khs
 }
 
 func mineManager(m *Miner) {
@@ -101,6 +113,7 @@ func mineFacility(m *Miner) {
 		log.Printf("miner start mining at diff %020x\n", m.Difficulty)
 		startTime := time.Now()
 		m.nonce = 0
+		m.khs = 0
 		nonce := 0
 		for {
 			select {
@@ -118,7 +131,6 @@ func mineFacility(m *Miner) {
 				startTime = time.Now()
 
 				m.nonce = nonce
-				log.Printf("miner reports hash rate at %.3f kh/s\n", m.khs)
 			}
 
 			hash := task.Hash(nonce)

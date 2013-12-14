@@ -65,6 +65,10 @@ func (p *Population) Slice(bacts []*Bacteria) *Population {
 		Traits: p.Traits}
 }
 
+func (p *Population) GetGene(b *Bacteria, index int) float64 {
+	return 1.0
+}
+
 func (p *Population) Fuck(a *Bacteria, b *Bacteria) *Bacteria {
 	new_dna := Crossover(a.Chromosome.DNA, b.Chromosome.DNA)
 

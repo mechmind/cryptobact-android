@@ -20,8 +20,9 @@ const (
 	FOOD_TICKS    = 20
 	FOOD_PER_TICK = 10
 
-	MINER_DIFF   = 140
-	MINER_BUFFER = 255
+	MINER_BASE_DIFF = 145
+	MINER_BASE_RATE = 6.0
+	MINER_BUFFER    = 255
 
 	INFECT_WITH_SIZE  = 4
 	INFECT_MULTIPLIER = 2
@@ -29,6 +30,12 @@ const (
 	INFECT_PORT_1 = 1234
 	INFECT_PORT_2 = 2345
 	INFECT_PORT_3 = 3456
+
+	TARGET_TPS = 100
+
+	CALIBRATE_MS = 200
+
+	TPS_WINDOW_SIZE = 10
 )
 
 type Updater interface {
@@ -40,7 +47,7 @@ func Loop(updater Updater) {
 
 	rand.Seed(time.Now().UnixNano())
 
-	miner := evo.NewMiner(MINER_DIFF, MINER_BUFFER)
+	miner := evo.NewMiner(MINER_BASE_DIFF, MINER_BUFFER)
 	miner.Start()
 
 	chain := &evo.Chromochain{
@@ -75,7 +82,12 @@ func Loop(updater Updater) {
 
 	world.SpawnAcid()
 	world.SpawnClot()
+	//startTick := 0
+	estTPSAvg := make([]int, TPS_WINDOW_SIZE)
+	realTPSAvg := make([]int, TPS_WINDOW_SIZE)
 	for {
+		startTime := time.Now()
+
 		world.SpawnFood()
 
 		for _, population := range world.Populations {
@@ -83,6 +95,7 @@ func Loop(updater Updater) {
 		}
 
 		world.CleanFood()
+
 		updater.Update(world)
 
 		if world.Notch(100) {
@@ -100,7 +113,36 @@ func Loop(updater Updater) {
 		}
 
 		world.Step()
+
+		maxTPS := EstimateTPS(world.GetSmallTick(), startTime, &estTPSAvg)
+
+		CalibrateTPS(maxTPS)
+		CalibrateMiner(miner)
+
+		realTPS := EstimateTPS(world.GetSmallTick(), startTime, &realTPSAvg)
+
+		if world.Notch(500) {
+			log.Printf("current miner hash rate is %.3f kh/s\n",
+				miner.GetHashRate())
+			log.Printf("current ticks per second is %d of %d max\n",
+				realTPS, maxTPS)
+			log.Printf("current My Population size is %d\n",
+				len(world.Populations[0].Bacts))
+		}
 	}
+}
+
+func EstimateTPS(smallTick int, startTime time.Time, TPSAvg *[]int) int {
+	nano := time.Since(startTime).Nanoseconds()
+	TPS := int(999999999 / nano)
+	(*TPSAvg)[smallTick%TPS_WINDOW_SIZE] = TPS
+
+	sum := 0
+	for _, v := range *TPSAvg {
+		sum += v
+	}
+
+	return sum / TPS_WINDOW_SIZE
 }
 
 func SimulatePopulation(world *World, population *evo.Population) {
@@ -126,4 +168,24 @@ func InitPopulation(world *World, population *evo.Population) {
 		b.Energy = 1000 * float64(population.GetGene(b, 11)) / 10
 		b.RotationSpeed = 10.0 + float64(population.GetGene(b, 4)/20)
 	}
+}
+
+func CalibrateMiner(m *evo.Miner) {
+	if m.GetHashRate() <= 0 {
+		return
+	}
+
+	m.SetThreshold(MINER_BASE_DIFF - int(m.GetHashRate()/MINER_BASE_RATE))
+}
+
+func CalibrateTPS(rate int) {
+	if rate <= TARGET_TPS {
+		return
+	}
+
+	avg := 1.0 / float64(rate) * 999999999
+
+	sleep := (float64(rate)/float64(TARGET_TPS) - 1) * avg
+
+	time.Sleep(time.Duration(sleep) * time.Nanosecond)
 }

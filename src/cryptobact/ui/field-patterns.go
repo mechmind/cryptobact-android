@@ -1,27 +1,59 @@
 package ui
 
 import (
-	"cryptobacteria/gl"
+	"cryptobact/gl"
 )
 
 const (
-	ID_BACTERIA = iota
+	ID_BACTERIA_BODY = iota
+	ID_BACTERIA_ORG
 	ID_EGG
 	ID_FOOD
+	ID_MARKUP
 	TOTAL_IDS
 )
 
 type template struct {
-	color    gl.Color
-	vertices []gl.Vertex
+	verts  []float32
+	glType uint
+	color  [3]byte
 }
 
-var mainSet = []*template {
-	ID_BACTERIA: &template{
-		color: gl.Color{1.0, 0.8, 0.4, 1.0},
-		vertices: []gl.Vertex{
-			{0, -30}, {0, 0}, {-8, 6},
+var mainSet = []*template{
+	ID_BACTERIA_BODY: &template{
+		verts: []float32{
+			0, -30, 0, 0, -8, 6,
 		},
+		glType: uint(gl.TRIANGLES),
+		color:  [3]byte{},
+	},
+	ID_BACTERIA_ORG: &template{
+		verts: []float32{
+			0, -30, 0, 0, -8, 6,
+		},
+		glType: uint(gl.TRIANGLES),
+		color:  [3]byte{},
+	},
+	ID_EGG: &template{
+		verts: []float32{
+			0, -30, 0, 0, -8, 6,
+		},
+		glType: uint(gl.TRIANGLES),
+		color:  [3]byte{},
+	},
+	ID_FOOD: &template{
+		verts: []float32{
+			0, -30, 0, 0, -8, 6,
+		},
+		glType: uint(gl.TRIANGLES),
+		color:  [3]byte{},
+	},
+	ID_MARKUP: &template{
+		verts: []float32{
+			0, 0,
+		},
+		glType: uint(gl.POINTS),
+		color:  [3]byte{250, 160, 0},
 	},
 }
 

@@ -9,6 +9,7 @@ package main
 import "C"
 import "log"
 import "unsafe"
+import "cryptobact/ui"
 
 // Use JNI_OnLoad to ensure that the go runtime is initialized at a predictable time,
 // namely at System.loadLibrary()
@@ -54,5 +55,15 @@ func Java_net_goandroid_cryptobact_Engine_onTouch(env *C.JNIEnv, clazz C.jclass,
 			log.Fatalf("panic: resize: %v\n", err)
 		}
 	}()
-	g.onTouch(int(action), float32(x), float32(y))
+	actionI := int(action)
+	switch action {
+	case C.AMOTION_EVENT_ACTION_UP:
+		actionI = ui.AMOTION_EVENT_ACTION_UP
+	case C.AMOTION_EVENT_ACTION_DOWN:
+		actionI = ui.AMOTION_EVENT_ACTION_UP
+	case C.AMOTION_EVENT_ACTION_MOVE:
+		actionI = ui.AMOTION_EVENT_ACTION_MOVE
+	}
+
+	g.onTouch(actionI, float32(x), float32(y))
 }

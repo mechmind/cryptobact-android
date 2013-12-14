@@ -43,7 +43,7 @@ func GlBindBuffer(buf uint, mode uint) error {
 	return nil
 }
 
-func GlBufferData(glType uint, verts []ColoredVertex, glMode uint) error {
+func GlBufferData(glType uint, verts []float32, glMode uint) error {
 	C.glBufferData(C.GLenum(glType),
 		C.GLsizeiptr(len(verts)*int(unsafe.Sizeof(verts[0]))),
 		unsafe.Pointer(&verts[0]), C.GLenum(glMode))

@@ -51,6 +51,6 @@ func (s *Slider) Vertexes(cx, cy, sizex, sizey C.GLfloat) (lines, triangles []C.
 	return lines, triangles
 }
 
-func (s *Slider) Hitboxes() []simpleRect {
+func (s *Slider) Hitboxes() []SimpleRect {
 	return nil
 }

@@ -1,23 +1,11 @@
 package main
 
-/*
-#include <stdlib.h>
-#include <jni.h>
-#include <android/input.h>
-#include <GLES2/gl2.h>
-#cgo android LDFLAGS: -lGLESv2
-*/
-import "C"
-
 import (
 	"cryptobact/engine"
 	"cryptobact/gl"
 	"cryptobact/ui"
 	"log"
-	"math"
 	"runtime"
-	"sync"
-	"unsafe"
 )
 
 const (
@@ -28,8 +16,6 @@ const (
 	STEP = 25.0
 )
 
-var ticks float64
-
 type game struct {
 	width, height int
 	mvp           []float32
@@ -38,8 +24,7 @@ type game struct {
 	presetScreen  *ui.PresetScreen
 	currentScreen ui.UInteractive
 
-	updater     *Updater
-	fieldRender *ui.FieldRender
+	updater *Updater
 }
 
 var g game
@@ -69,27 +54,21 @@ func main() {
 	g.updater = newUpdater()
 	go g.updater.fetchUpdates()
 	go engine.Loop(g.updater)
-
-	g.sliders = []Slider{
-		Slider{0.5},
-		Slider{0.5},
-		Slider{0.5},
-	}
 }
 
-func updateCurrentBuffer(verts []C.GLfloat) {
-	C.glBufferData(C.GL_ARRAY_BUFFER,
-		C.GLsizeiptr(len(verts)*int(unsafe.Sizeof(verts[0]))),
-		unsafe.Pointer(&verts[0]), C.GL_STATIC_DRAW)
-}
+//func updateCurrentBuffer(verts []C.GLfloat) {
+//	C.glBufferData(C.GL_ARRAY_BUFFER,
+//		C.GLsizeiptr(len(verts)*int(unsafe.Sizeof(verts[0]))),
+//		unsafe.Pointer(&verts[0]), C.GL_STATIC_DRAW)
+//}
 
 func (game *game) resize(width, height int) {
 	log.Println("now resize to ", width, height)
 	game.width = width
 	game.height = height
 
-	game.offsetX = float32(width-X_COUNT*STEP) / 2.0
-	game.offsetY = float32(height-Y_COUNT*STEP) / 2.0
+	//game.offsetX = float32(width-X_COUNT*STEP) / 2.0
+	//game.offsetY = float32(height-Y_COUNT*STEP) / 2.0
 
 	gl.MakeProjectionMatrix(0, float32(width)-1, 0, float32(height)-1, 1.0, -1.0, game.mvp)
 	gl.GlViewport(0, 0, width, height)
@@ -104,48 +83,35 @@ func (game *game) initGL() {
 	gl.GlEnable(gl.DEPTH_TEST)
 
 	game.mvp = make([]float32, 16)
-	game.prog, _ = gl.CreateProgram(vertShaderSrcDef, fragShaderSrcDef)
-	posAttrib, _ := gl.GlGetAttribLocation(game.prog, "vPosition")
-	game.posAttr = posAttrib
-	game.offsetUni, _ = gl.GlGetUniformLocation(game.prog, "offset")
-	game.mvpUni, _ = gl.GlGetUniformLocation(game.prog, "mvp")
-	game.colorUni, _ = gl.GlGetUniformLocation(game.prog, "color")
-	gl.GlUseProgram(game.prog)
-	gl.GlEnableVertexAttribArray(posAttrib)
-	// transformation matrix
-	gl.GlUniformMatrix4fv(game.mvpUni, 1, false, game.mvp)
+	//	game.prog, _ = gl.CreateProgram(vertShaderSrcDef, fragShaderSrcDef)
+	//	posAttrib, _ := gl.GlGetAttribLocation(game.prog, "vPosition")
+	//	game.posAttr = posAttrib
+	//	game.offsetUni, _ = gl.GlGetUniformLocation(game.prog, "offset")
+	//	game.mvpUni, _ = gl.GlGetUniformLocation(game.prog, "mvp")
+	//	game.colorUni, _ = gl.GlGetUniformLocation(game.prog, "color")
+	//	gl.GlUseProgram(game.prog)
+	//	gl.GlEnableVertexAttribArray(posAttrib)
+	//	// transformation matrix
+	//	gl.GlUniformMatrix4fv(game.mvpUni, 1, false, game.mvp)
+	//
+	//	game.gridBufId, _ = gl.GlGenBuffer()
+	//	game.sliderLinesBufId, _ = gl.GlGenBuffer()
+	//	game.sliderTriagsBufId, _ = gl.GlGenBuffer()
+	//	// set up grid buffer
+	//	game.verts = makeGridPoints(X_COUNT*STEP, Y_COUNT*STEP, STEP)
+	//	gl.GlBindBuffer(gl.ARRAY_BUFFER, game.gridBufId)
+	//	updateCurrentBuffer(game.verts)
+	//
 
-	game.gridBufId, _ = gl.GlGenBuffer()
-	game.sliderLinesBufId, _ = gl.GlGenBuffer()
-	game.sliderTriagsBufId, _ = gl.GlGenBuffer()
-	// set up grid buffer
-	game.verts = makeGridPoints(X_COUNT*STEP, Y_COUNT*STEP, STEP)
-	gl.GlBindBuffer(gl.ARRAY_BUFFER, game.gridBufId)
-	updateCurrentBuffer(game.verts)
+	//	// start engine
+	//	game.render = newRender(posAttrib)
+	//	game.updater.AttachRender(game.render)
 
-	// start engine
-	game.render = newRender(posAttrib)
-	game.updater.AttachRender(game.render)
-
-	game.currentScreen = newHookerScreen()
+	game.currentScreen = ui.NewHookerScreen(game)
 	log.Println("screen: now hooker")
 }
 
 func (game *game) drawFrame() {
-	ticks += .05
-	color := float32(math.Sin(ticks)+1) * .5
-
-	game.mu.Lock()
-	offX := game.offsetX
-	offY := game.offsetY
-	game.mu.Unlock()
-	// basic stuff
-	gl.GlUniform2f(game.offsetUni, offX, offY)
-	gl.GlUniform3f(game.colorUni, 1.0, color, 0)
-	gl.GlUniformMatrix4fv(game.mvpUni, 1, false, game.mvp)
-	gl.GlClear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-	gl.GlUseProgram(game.prog)
-
 	game.currentScreen.HandleDraw()
 }
 
@@ -153,17 +119,43 @@ func (game *game) onTouch(action int, x, y float32) {
 	game.currentScreen.HandleTouch(action, x, y)
 }
 
-func makeGridPoints(llimX, llimY, lstep float32) []gl.ColoredVertix {
-	limX, limY, step := C.GLfloat(llimX), C.GLfloat(llimY), C.GLfloat(lstep)
-	data := make([]C.GLfloat, 0, int(math.Ceil(float64(limX)*float64(limY)/(float64(step)*float64(step))+4)*4))
+func (g *game) Init(w, h int) {
+	var fieldx float32 = STEP * X_COUNT
+	var fieldy float32 = STEP * Y_COUNT
 
-	var nextX, nextY C.GLfloat
-	for nextX = 0.0; nextX < limX+0.1; nextX += step {
-		for nextY = 0.0; nextY < limY+0.1; nextY += step {
-			data = append(data, nextX, nextY)
-			//            data = append(data, nextX - CROSS_HALFSIZE, nextY, nextX + CROSS_HALFSIZE, nextY)
-			//            data = append(data, nextX, nextY - CROSS_HALFSIZE, nextX, nextY + CROSS_HALFSIZE)
-		}
+	fw := float32(w)
+	fh := float32(h)
+	if fieldx > fw || fieldy > fh {
+		log.Println("screen: khooyovoyo razreshenie", fieldx, fw, fieldy, fh)
+		return
 	}
-	return data
+
+	hpad := (fw - fieldx) / 2
+	bottompad := fh - fieldy - hpad
+
+	bottomRect := ui.SimpleRect{0, 0, fw, bottompad}
+
+	g.fieldScreen = ui.NewGameScreen(g, bottomRect)
+	//g.presetScreen = newPresetScreen(float32(fw * 2), 0, bottomRect)
+	g.presetScreen = ui.NewPresetScreen(g, bottomRect)
+
+	g.Switch(ui.ID_FIELD_SCREEN)
+	log.Println("screen: now game")
+}
+
+func (g *game) Switch(id int) {
+	switch id {
+	case ui.ID_FIELD_SCREEN:
+		g.currentScreen = g.fieldScreen
+	case ui.ID_PRESET_SCREEN:
+		g.currentScreen = g.presetScreen
+	}
+}
+
+func (g *game) GetProjectionMatrix() []float32 {
+	return g.mvp
+}
+
+func (g *game) GetSize() (h, w int, step float32) {
+	return g.height, g.width, STEP
 }

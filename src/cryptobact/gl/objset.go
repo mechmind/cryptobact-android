@@ -11,7 +11,11 @@ type Buffer struct {
 
 func NewBuffer(glType uint, binder shaderBinder) *Buffer {
 	glBuf, _ := GlGenBuffer() // FIXME: handle error
-	return &Buffer{nil, glType, glBuf, nil, binder}
+	return &Buffer{glType, glBuf, nil, binder}
+}
+
+func (b *Buffer) Append(data []float32) {
+	b.buf = append(b.buf, data...)
 }
 
 // flush data to opengl
@@ -19,7 +23,7 @@ func NewBuffer(glType uint, binder shaderBinder) *Buffer {
 func (b *Buffer) Flush() error {
 	// upload vertice + meta to opengl
 	GlBindBuffer(ARRAY_BUFFER, b.glBuffer)
-	GlBufferData(b.glType, allVerts, STATIC_DRAW)
+	GlBufferData(b.glType, b.buf, STATIC_DRAW)
 	// FIXME: rebind shader attrs
 	b.buf = b.buf[:0]
 	return nil

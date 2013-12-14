@@ -103,7 +103,7 @@ func Loop(updater Updater) {
 		world.SpawnFood()
 
 		for _, population := range world.Populations {
-			if world.Notch(500) {
+			if world.Notch(250) {
 				log.Println(population)
 			}
 
@@ -186,8 +186,6 @@ func SimulatePopulation(world *World, population *evo.Population) {
 		a := GetAction(population, bact, world)
 		if a != nil {
 			a.Apply()
-		} else {
-			log.Println("leave me here comrades", bact)
 		}
 	}
 

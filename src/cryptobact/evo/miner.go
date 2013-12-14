@@ -118,11 +118,12 @@ func mineFacility(m *Miner) {
 		m.nonce = 0
 		m.khs = 0
 		nonce := 0
+		outerFor:
 		for {
 			select {
 			case <-m.kill:
 				log.Println("miner killed at nonce", nonce, task)
-				break
+				break outerFor
 			default:
 			}
 
@@ -144,7 +145,7 @@ func mineFacility(m *Miner) {
 				task.Nonce = nonce
 				task.CurrHash = hash
 				m.proved <- task
-				break
+				break outerFor
 			} else {
 				nonce += 1
 			}

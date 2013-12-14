@@ -5,7 +5,7 @@ import "fmt"
 // base values common for all bacterias
 const (
 	B_BASE_ENERGY       = 200  // energy points at birth
-	B_BASE_TTL          = 500 // time to live in ticks
+	B_BASE_TTL          = 2000 // time to live in ticks
 	B_BASE_SPEED        = 0.5  // speed in pixels per tick
 	B_BASE_ROTATION     = 0.5  // rotation speed in degrees per tick
 	B_BASE_METABOLISM   = 0.75 // which part of eaten food becomes an energy
@@ -16,8 +16,8 @@ const (
 	B_BASE_LUST         = 0.5  // love to food {0..1}
 	B_BASE_GLUT         = 0.5  // love to fuck {0..1}
 	B_BASE_AGGRESSION   = 0.5  // aggression {0..1}
-	B_BASE_FUCK_ENERGY  = 20   // energy spent to fuck
-	B_BASE_MOVE_ENERGY  = 0.5  // energy spent to move
+	B_BASE_FUCK_ENERGY  = 250  // energy spent to fuck
+	B_BASE_MOVE_ENERGY  = 0.05 // energy spent to move
 	B_BASE_PROCR_ENERGY = 0.5  // energy wiped while procrastinate (per tick)
 	B_BASE_EAT_DIST     = 0.05 // maximum eat distance
 	B_BASE_FUCK_DIST    = 0.05 // maximum fuck distance
@@ -169,13 +169,18 @@ func (b *Bacteria) CanFuck() bool {
 }
 
 func (b *Bacteria) String() string {
-	return fmt.Sprintf("{%5.2f; %5.2f} A%3.2f E%6.1f TTL%5d :: %s [%t]\n",
+	form := ""
+	if !b.Born {
+		form = "EGG"
+	}
+
+	return fmt.Sprintf("{%5.2f;%5.2f}A%-5.1fE%-6.1fTTL%-5d :: %s %s",
 		b.X, b.Y,
 		b.Angle,
 		b.Energy,
 		b.TTL,
 		b.Chromosome.DNA,
-		b.Born,
+		form,
 	)
 }
 

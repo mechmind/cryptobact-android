@@ -127,6 +127,10 @@ func (p *Population) GetTrait(b *Bacteria, attitude_id string) uint {
 func (p *Population) Kill(target *Bacteria) {
 	alive := make([]*Bacteria, 0)
 
+	if !target.Born {
+		p.Chain.Miner.Cancel(target.Chromosome)
+	}
+
 	for _, b := range p.Bacts {
 		if b != target {
 			alive = append(alive, b)
@@ -150,7 +154,13 @@ func (p *Population) DeliverChild() {
 }
 
 func (p *Population) String() string {
-	return fmt.Sprintf("TRAITS:\n%s\nBACTS:\n%s\n", p.Traits, p.Bacts)
+	result := make([]string, 0)
+	for _, b := range p.Bacts {
+		result = append(result, b.String())
+	}
+
+	return fmt.Sprintf("TRAITS:\n%s\nBACTS:\n%s\n", p.Traits,
+		strings.Join(result, "\n"))
 }
 
 func (p *Population) Clone() *Population {

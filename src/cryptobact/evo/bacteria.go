@@ -4,24 +4,24 @@ import "fmt"
 
 // base values common for all bacterias
 const (
-	B_BASE_ENERGY       = 200  // energy points at birth
-	B_BASE_TTL          = 2000 // time to live in ticks
-	B_BASE_SPEED        = 0.5  // speed in pixels per tick
-	B_BASE_ROTATION     = 0.5  // rotation speed in degrees per tick
-	B_BASE_METABOLISM   = 0.75 // which part of eaten food becomes an energy
-	B_BASE_CLOT_RESIST  = 0.5  // clot resistance {0..1}
-	B_BASE_ACID_RESIST  = 0.5  // acid resistance {0..1}
-	B_BASE_FERTILITY    = 0.5  // fertility rank {0..1}
-	B_BASE_DAMAGE       = 2    // physical damage per tick
-	B_BASE_LUST         = 0.5  // love to food {0..1}
-	B_BASE_GLUT         = 0.5  // love to fuck {0..1}
-	B_BASE_AGGRESSION   = 0.5  // aggression {0..1}
-	B_BASE_FUCK_ENERGY  = 250  // energy spent to fuck
-	B_BASE_MOVE_ENERGY  = 0.05 // energy spent to move
-	B_BASE_PROCR_ENERGY = 0.5  // energy wiped while procrastinate (per tick)
-	B_BASE_EAT_DIST     = 0.05 // maximum eat distance
-	B_BASE_FUCK_DIST    = 0.05 // maximum fuck distance
-	B_BASE_ATTACK_DIST  = 0.05 // maximum attack distance
+	B_BASE_ENERGY       = 200    // energy points at birth
+	B_BASE_TTL          = 4000   // time to live in ticks
+	B_BASE_SPEED        = 0.7    // speed in pixels per tick
+	B_BASE_ROTATION     = 0.5    // rotation speed in degrees per tick
+	B_BASE_METABOLISM   = 0.75   // which part of eaten food becomes an energy
+	B_BASE_CLOT_RESIST  = 0.5    // clot resistance {0..1}
+	B_BASE_ACID_RESIST  = 0.5    // acid resistance {0..1}
+	B_BASE_FERTILITY    = 0.5    // fertility rank {0..1}
+	B_BASE_DAMAGE       = 2      // physical damage per tick
+	B_BASE_LUST         = 0.5    // love to food {0..1}
+	B_BASE_GLUT         = 0.5    // love to fuck {0..1}
+	B_BASE_AGGRESSION   = 0.5    // aggression {0..1}
+	B_BASE_FUCK_ENERGY  = 110    // energy spent to fuck
+	B_BASE_MOVE_ENERGY  = 0.001  // energy spent to move
+	B_BASE_PROCR_ENERGY = 0.0001 // energy wiped while procrastinate (per tick)
+	B_BASE_EAT_DIST     = 0.05   // maximum eat distance
+	B_BASE_FUCK_DIST    = 1.0    // maximum fuck distance
+	B_BASE_ATTACK_DIST  = 2.0    // maximum attack distance
 )
 
 // values specific for current bacteria sample
@@ -33,6 +33,7 @@ type Bacteria struct {
 	Y          float64 `json:"-"`
 	Angle      float64 `json:"-"`
 	Born       bool
+	Labouring  bool
 	TargetX    float64 `json:"-"`
 	TargetY    float64 `json:"-"`
 }
@@ -49,6 +50,7 @@ func NewBacteria(c *Chromosome) *Bacteria {
 		0.0,
 		0.0,
 		false,
+		false,
 		0.0,
 		0.0,
 	}
@@ -56,9 +58,16 @@ func NewBacteria(c *Chromosome) *Bacteria {
 
 // FIXME get coeff from DNA
 func getSelfTtl(d *DNA) int {
-	coeff := 0
-	result := B_BASE_TTL + B_BASE_TTL*coeff
-	return result
+	coeff := d.GetNormGene(2)
+	result := B_BASE_TTL + B_BASE_TTL*coeff +
+		10*d.GetNormGene(0) -
+		10*d.GetNormGene(1) +
+		2*d.GetNormGene(2) -
+		2*d.GetNormGene(3) +
+		d.GetNormGene(4) -
+		d.GetNormGene(5) +
+		d.GetNormGene(6)
+	return int(result)
 }
 
 func (b *Bacteria) GetSelfTtl() int {
@@ -67,7 +76,7 @@ func (b *Bacteria) GetSelfTtl() int {
 
 // FIXME get coeff from DNA
 func getSelfEnergy(d *DNA) float64 {
-	coeff := 0.0
+	coeff := d.GetNormGene(1) - d.GetNormGene(3)/(1+d.GetNormGene(14))
 	result := B_BASE_ENERGY + B_BASE_ENERGY*coeff
 	return result
 }
@@ -78,7 +87,8 @@ func (b *Bacteria) GetSelfEnergy() float64 {
 
 // FIXME get coeff from DNA
 func (b *Bacteria) GetSpeed() float64 {
-	coeff := 0.0
+	coeff := (b.Chromosome.DNA.GetNormGene(0) - b.Chromosome.DNA.GetNormGene(2)) /
+		(b.Chromosome.DNA.GetNormGene(11) + 0.01)
 	result := B_BASE_SPEED + B_BASE_SPEED*coeff
 	return result
 }
@@ -99,15 +109,15 @@ func (b *Bacteria) GetDamage() float64 {
 
 // FIXME get coeff from DNA
 func (b *Bacteria) GetLust() float64 {
-	coeff := 0.0
-	result := B_BASE_LUST + B_BASE_LUST*coeff
+	coeff := b.Chromosome.DNA.GetNormGene(11)
+	result := (B_BASE_LUST + B_BASE_LUST*coeff) / (float64(b.TTL)*0.0001 + 0.01)
 	return result
 }
 
 // FIXME get coeff from DNA
 func (b *Bacteria) GetGlut() float64 {
-	coeff := 0.0
-	result := (B_BASE_GLUT+B_BASE_GLUT*coeff)/(float64(b.Energy)*0.001) + 0.01
+	coeff := b.Chromosome.DNA.GetNormGene(10)
+	result := (B_BASE_GLUT + B_BASE_GLUT*coeff) / (float64(b.Energy)*0.001 + 0.01)
 	return result
 }
 
@@ -120,14 +130,14 @@ func (b *Bacteria) GetAggression() float64 {
 
 // FIXME get coeff from DNA
 func (b *Bacteria) GetAcidResist() float64 {
-	coeff := 0.0
+	coeff := b.Chromosome.DNA.GetNormGene(9)
 	result := B_BASE_ACID_RESIST + B_BASE_ACID_RESIST*coeff
 	return result
 }
 
 // FIXME get coeff from DNA
 func (b *Bacteria) GetFuckEnergy() float64 {
-	coeff := 0.0
+	coeff := b.Chromosome.DNA.GetNormGene(8)
 	result := B_BASE_FUCK_ENERGY + B_BASE_FUCK_ENERGY*coeff
 	return result
 }
@@ -148,7 +158,7 @@ func (b *Bacteria) GetEatDist() float64 {
 
 // FIXME get coeff from DNA
 func (b *Bacteria) GetFuckDist() float64 {
-	coeff := 0.0
+	coeff := b.Chromosome.DNA.GetNormGene(6)
 	result := B_BASE_FUCK_DIST + B_BASE_FUCK_DIST*coeff
 	return result
 }
@@ -162,10 +172,15 @@ func (b *Bacteria) GetAttackDist() float64 {
 
 func (b *Bacteria) CanFuck() bool {
 	energy_required := b.GetFuckEnergy()
-	if b.Energy >= energy_required {
+	if b.Energy >= energy_required*(1+b.Chromosome.DNA.GetNormGene(1)) {
 		return true
 	}
 	return false
+}
+
+func (b *Bacteria) RenewTTL() {
+	b.TTL = int(float64(getSelfTtl(b.Chromosome.DNA)) +
+		10000*b.Chromosome.DNA.GetNormGene(10))
 }
 
 func (b *Bacteria) String() string {
@@ -193,8 +208,9 @@ func (b *Bacteria) GetProcrEnergy() float64 {
 
 // FIXME get coeff from DNA
 func (b *Bacteria) GetMoveEnergy() float64 {
-	coeff := 0.0
-	result := B_BASE_MOVE_ENERGY + B_BASE_MOVE_ENERGY*coeff
+	coeff := b.Chromosome.DNA.GetNormGene(5)
+	result := (B_BASE_MOVE_ENERGY + B_BASE_MOVE_ENERGY*coeff) *
+		b.Chromosome.DNA.GetNormGene(4)
 	return result
 }
 

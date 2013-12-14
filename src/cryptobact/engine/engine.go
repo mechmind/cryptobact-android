@@ -22,12 +22,12 @@ const (
 	FOOD_TICKS    = 200
 	FOOD_PER_TICK = 10
 
-	MINER_BASE_DIFF = 145
+	MINER_BASE_DIFF = 146
 	MINER_BASE_RATE = 6.0
 	MINER_BUFFER    = 255
 
-	INFECT_WITH_SIZE  = 4
-	INFECT_MULTIPLIER = 2
+	INFECT_WITH_SIZE  = 3
+	INFECT_MULTIPLIER = 3
 
 	INFECT_PORT_1 = 1234
 	INFECT_PORT_2 = 2345
@@ -53,6 +53,7 @@ func Loop(updater Updater) {
 		if err := recover(); err != nil {
 			log.Println("work failed:", err)
 			log.Printf("DEBUG: %s", debug.Stack())
+			panic(err)
 		}
 	}()
 
@@ -102,12 +103,18 @@ func Loop(updater Updater) {
 
 		world.SpawnFood()
 
+		minerStartedFor := miner.GetStarted()
 		for _, population := range world.Populations {
-			if world.Notch(250) {
+			if world.Notch(1000) {
 				log.Println(population)
 			}
 
 			SimulatePopulation(world, population)
+			for _, b := range population.Bacts {
+				if b.Chromosome == minerStartedFor {
+					b.Labouring = true
+				}
+			}
 		}
 
 		world.CleanFood()
@@ -148,7 +155,7 @@ func Loop(updater Updater) {
 
 		realTPS := EstimateTPS(world.GetSmallTick(), startTime, &realTPSAvg)
 
-		targetTPS = CorrectTargetTPS(realTPS, targetTPS)
+		//targetTPS = CorrectTargetTPS(realTPS, targetTPS)
 
 		if world.Notch(500) {
 			log.Printf("current miner hash rate is %.3f kh/s\n",
@@ -187,9 +194,14 @@ func SimulatePopulation(world *World, population *evo.Population) {
 		if a != nil {
 			a.Apply()
 		}
+
+		//log.Println(a)
 	}
 
-	population.DeliverChild()
+	child := population.DeliverChild()
+	if child != nil {
+		child.RenewTTL()
+	}
 	world.GetOld(population)
 	world.ApplyAcid(population)
 }

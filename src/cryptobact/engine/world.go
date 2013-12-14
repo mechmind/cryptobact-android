@@ -9,13 +9,13 @@ import (
 )
 
 const (
-	MAX_FOODS = 100
+	MAX_FOODS         = 100
 	MAX_ACID_SPOTS    = 5
 	MAX_ACID_CON      = 0.5
 	MAX_CLOT_SPOTS    = 5
 	MAX_CLOT_DENS     = 0.5
-	MIN_FOOD_CALORIES = 10.0
-	MAX_FOOD_CALORIES = 20.0
+	MIN_FOOD_CALORIES = 30.0
+	MAX_FOOD_CALORIES = 50.0
 )
 
 type World struct {
@@ -94,7 +94,9 @@ func (w *World) CleanFood() {
 // makes bacteries a little older
 func (w *World) GetOld(population *evo.Population) {
 	for _, b := range population.Bacts {
+		//if b.Born || b.Labouring || true {
 		b.TTL -= 1
+		//}
 	}
 }
 
@@ -142,6 +144,7 @@ func (w *World) GetNearestFood(b *evo.Bacteria) *Food {
 		}
 		dist := dist(b.X, b.Y, f.X, f.Y)
 		if dist < min_dist {
+			min_dist = dist
 			result = f
 		}
 	}
@@ -155,6 +158,7 @@ func (w *World) GetNearestAcid(b *evo.Bacteria) *Acid {
 	for _, a := range w.Acid {
 		dist := dist(b.X, b.Y, a.X, a.Y)
 		if dist < min_dist {
+			min_dist = dist
 			result = a
 		}
 	}
@@ -171,13 +175,23 @@ func (w *World) GetNearestEnemy(b *evo.Bacteria) *evo.Bacteria {
 func (w *World) GetNearestFellow(b *evo.Bacteria) *evo.Bacteria {
 	min_dist := math.Inf(0)
 	var result *evo.Bacteria
-	for _, f := range w.Populations[0].Bacts {
-		if f == b {
-			continue
-		}
-		dist := dist(b.X, b.Y, f.X, f.Y)
-		if dist < min_dist {
-			result = f
+	for _, p := range w.Populations {
+	outerLoop:
+		for _, f := range p.Bacts {
+			if f.Chromosome.Author != b.Chromosome.Author {
+				continue outerLoop
+			}
+			if f == b {
+				continue
+			}
+			if !f.Born {
+				continue
+			}
+			dist := dist(b.X, b.Y, f.X, f.Y)
+			if dist < min_dist {
+				min_dist = dist
+				result = f
+			}
 		}
 	}
 	return result

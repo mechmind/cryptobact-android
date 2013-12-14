@@ -33,7 +33,7 @@ func (t TraitMap) String() string {
 
 type Trait struct {
 	Pattern string
-	Max     uint
+	Max     int
 }
 
 func (t *Trait) String() string {
@@ -93,13 +93,13 @@ func (p *Population) Fuck(a *Bacteria, b *Bacteria) *Bacteria {
 	new_dna.Mutate(p.Env.MutateProbability, p.Env.MutateRate)
 
 	second_recomb_change := p.Env.RecombinationChance
-	for _, attitude := range p.Traits {
-		if new_dna.MatchPatternCount(attitude.Pattern) >= attitude.Max {
+	for _, trait := range p.Traits {
+		if new_dna.MatchPatternCount(trait.Pattern) >= trait.Max {
 			continue
 		}
 
 		if rand.Float64() >= second_recomb_change {
-			new_dna.Recombine(attitude.Pattern)
+			new_dna.Recombine(trait.Pattern)
 			second_recomb_change /= p.Env.RecombinationDrop
 		}
 	}
@@ -108,20 +108,21 @@ func (p *Population) Fuck(a *Bacteria, b *Bacteria) *Bacteria {
 		DNA: new_dna})
 
 	// @TODO hide interface
-	p.Chain.Miner.Prove(new_bacteria.Chromosome)
+	p.Chain.Miner.Prove(new_bacteria.Chromosome,
+		int(a.Chromosome.DNA.Diff(new_dna) + b.Chromosome.DNA.Diff(new_dna)) / 2)
 
 	p.Bacts = append(p.Bacts, new_bacteria)
 
 	return new_bacteria
 }
 
-func (p *Population) GetTrait(b *Bacteria, attitude_id string) uint {
+func (p *Population) GetTrait(b *Bacteria, traitId string) int {
 	if p.Traits == nil {
 		return 0
 	}
 
 	return b.Chromosome.DNA.MatchPatternCount(
-		p.Traits[attitude_id].Pattern)
+		p.Traits[traitId].Pattern)
 }
 
 func (p *Population) Kill(target *Bacteria) {
@@ -140,17 +141,19 @@ func (p *Population) Kill(target *Bacteria) {
 	p.Bacts = alive
 }
 
-func (p *Population) DeliverChild() {
+func (p *Population) DeliverChild() *Bacteria {
 	newborn := p.Chain.Miner.GetMined()
 	if newborn == nil {
-		return
+		return nil
 	}
 	for _, b := range p.Bacts {
 		if b.Chromosome == newborn {
 			b.Born = true
-			return
+			return b
 		}
 	}
+
+	return nil
 }
 
 func (p *Population) String() string {

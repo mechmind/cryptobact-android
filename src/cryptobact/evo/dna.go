@@ -161,8 +161,8 @@ func (dna *DNA) GetNormGene(index int) float64 {
 		float64(1<<GENE_MAX_LENGTH)
 }
 
-func (dna *DNA) MatchPatternCount(pattern string) uint {
-	count := uint(0)
+func (dna *DNA) MatchPatternCount(pattern string) int {
+	count := -1
 	for i := 0; i < dna.Length; i++ {
 		found := true
 		for j, ch := range pattern {
@@ -186,6 +186,17 @@ func (dna *DNA) MatchPatternCount(pattern string) uint {
 		}
 	}
 	return count
+}
+
+func (d *DNA) Diff(d2 *DNA) int {
+	diff := 0
+	length := int(math.Min(float64(d.Seq.BitLen()), float64(d2.Seq.BitLen())))
+	for i := 0; i < length; i++ {
+		diff += int(d.Seq.Bit(i)) ^ int(d2.Seq.Bit(i))
+	}
+
+	diff += int(math.Abs(float64(d.Seq.BitLen() - d2.Seq.BitLen())))
+	return diff
 }
 
 func (dna *DNA) String() string {

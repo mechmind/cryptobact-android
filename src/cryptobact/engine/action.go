@@ -107,7 +107,8 @@ func (a ActionFuck) Apply() {
 	child := a.P.Fuck(a.Bact, a.Object)
 	child.X = (a.Object.X + a.Bact.X) / 2
 	child.Y = (a.Object.Y + a.Bact.Y) / 2
-	a.Bact.Energy -= a.Bact.GetFuckEnergy()
+	a.Bact.Energy -= a.Bact.GetFuckEnergy() / float64(a.P.GetTrait(a.Bact, "lust") + 1)
+	a.Object.Energy -= a.Object.GetFuckEnergy() / float64(a.P.GetTrait(a.Object, "lust") + 1)
 }
 
 type ActionDie struct {
@@ -121,11 +122,15 @@ func (a ActionDie) Apply() {
 }
 
 func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
+	//if !b.Born && !b.Labouring {
+	//    return nil
+	//}
+
 	if b.TTL <= 0 || b.Energy <= 0 {
 		return ActionDie{b, p}
 	}
 
-	if b.Born == false {
+	if !b.Born {
 		return nil
 	}
 

@@ -10,7 +10,8 @@ import (
 var _ = fmt.Print
 
 type Miner struct {
-	Difficulty *big.Int
+	Difficulty int
+	Threshold  *big.Int
 	nonce      int
 	khs        float64
 	getwork    chan bool
@@ -31,15 +32,16 @@ func NewMiner(difficulty int, bufSize int) *Miner {
 		proved:   make(chan *Chromosome, bufSize),
 	}
 
-	m.SetThreshold(difficulty)
+	m.SetDifficulty(difficulty)
 
 	return m
 }
 
-func (m *Miner) SetThreshold(difficulty int) {
+func (m *Miner) SetDifficulty(difficulty int) {
+	m.Difficulty = difficulty
 	threshold := big.NewInt(1)
 	threshold.Lsh(threshold, uint(difficulty))
-	m.Difficulty = threshold
+	m.Threshold = threshold
 }
 
 func (m *Miner) Prove(chromo *Chromosome) {
@@ -110,8 +112,9 @@ func mineFacility(m *Miner) {
 		m.getwork <- true
 		task := <-m.sendwork
 
-		log.Printf("miner start mining at diff %020x\n", m.Difficulty)
+		log.Printf("miner start mining at diff %020x\n", m.Threshold)
 		startTime := time.Now()
+		measureTime := time.Now()
 		m.nonce = 0
 		m.khs = 0
 		nonce := 0
@@ -123,19 +126,21 @@ func mineFacility(m *Miner) {
 			default:
 			}
 
-			if time.Since(startTime) > 2*time.Second {
+			if time.Since(measureTime) > 2*time.Second {
 				m.khs = float64(nonce-m.nonce) /
-					float64(time.Since(startTime).Seconds()) /
+					float64(time.Since(measureTime).Seconds()) /
 					1000.0
 
-				startTime = time.Now()
+				measureTime = time.Now()
 
 				m.nonce = nonce
 			}
 
 			hash := task.Hash(nonce)
-			if hash.Cmp(m.Difficulty) <= 0 {
-				log.Println("miner successfully mined task at nonce", nonce)
+			if hash.Cmp(m.Threshold) <= 0 {
+				log.Printf("miner successfully mined task at nonce %d, time %.2f sec",
+					nonce,
+					time.Since(startTime).Seconds())
 				task.Nonce = nonce
 				task.CurrHash = hash
 				m.proved <- task

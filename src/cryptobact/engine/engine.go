@@ -6,8 +6,10 @@ import (
 	"cryptobact/infektor/transport"
 
 	"log"
+	"math"
 	"math/rand"
 	"runtime"
+	"runtime/debug"
 	"time"
 )
 
@@ -36,6 +38,8 @@ const (
 	CALIBRATE_MS = 200
 
 	TPS_WINDOW_SIZE = 10
+
+	MAX_NANO = 999999999
 )
 
 type Updater interface {
@@ -44,6 +48,13 @@ type Updater interface {
 
 func Loop(updater Updater) {
 	runtime.GOMAXPROCS(2)
+
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("work failed:", err)
+			log.Printf("DEBUG: %s", debug.Stack())
+		}
+	}()
 
 	rand.Seed(time.Now().UnixNano())
 
@@ -85,6 +96,7 @@ func Loop(updater Updater) {
 	//startTick := 0
 	estTPSAvg := make([]int, TPS_WINDOW_SIZE)
 	realTPSAvg := make([]int, TPS_WINDOW_SIZE)
+	targetTPS := TARGET_TPS
 	for {
 		startTime := time.Now()
 
@@ -101,9 +113,20 @@ func Loop(updater Updater) {
 		if world.Notch(100) {
 			infection := infektor.Catch()
 			if infection != nil {
-				if infection.Chain.Author != chain.Author {
+				exists := false
+				for _, p := range world.Populations {
+					if infection.Chain.Author == p.Chain.Author {
+						exists = true
+						break
+					}
+				}
+
+				if !exists {
 					log.Println("received infection size", len(infection.Bacts))
 					log.Println(infection)
+					infection.Chain.Miner = miner
+					infection.Env = world.Populations[0].Env
+					world.Populations = append(world.Populations, infection)
 				}
 			}
 		}
@@ -116,25 +139,34 @@ func Loop(updater Updater) {
 
 		maxTPS := EstimateTPS(world.GetSmallTick(), startTime, &estTPSAvg)
 
-		CalibrateTPS(maxTPS)
+		CalibrateTPS(maxTPS, targetTPS)
 		CalibrateMiner(miner)
 
 		realTPS := EstimateTPS(world.GetSmallTick(), startTime, &realTPSAvg)
 
+		targetTPS = CorrectTargetTPS(realTPS, targetTPS)
+
 		if world.Notch(500) {
 			log.Printf("current miner hash rate is %.3f kh/s\n",
 				miner.GetHashRate())
-			log.Printf("current ticks per second is %d of %d max\n",
-				realTPS, maxTPS)
-			log.Printf("current My Population size is %d\n",
-				len(world.Populations[0].Bacts))
+			log.Printf("current ticks per second is %d (%d) of %d max\n",
+				realTPS, targetTPS, maxTPS)
+			for i, p := range world.Populations {
+				log.Printf("current population {%d} size is %d\n",
+					i,
+					len(p.Bacts))
+			}
 		}
 	}
 }
 
 func EstimateTPS(smallTick int, startTime time.Time, TPSAvg *[]int) int {
 	nano := time.Since(startTime).Nanoseconds()
-	TPS := int(999999999 / nano)
+	if nano == 0 {
+		return -1
+	}
+
+	TPS := int(MAX_NANO / nano)
 	(*TPSAvg)[smallTick%TPS_WINDOW_SIZE] = TPS
 
 	sum := 0
@@ -171,17 +203,32 @@ func CalibrateMiner(m *evo.Miner) {
 		return
 	}
 
-	m.SetThreshold(MINER_BASE_DIFF - int(m.GetHashRate()/MINER_BASE_RATE))
+	newDiff := int(MINER_BASE_DIFF - math.Ceil(
+		float64(m.GetHashRate()/MINER_BASE_RATE)) + 1)
+
+	if m.Difficulty != newDiff {
+		log.Printf("miner calibration %d -> %d", m.Difficulty, newDiff)
+	}
+
+	m.SetDifficulty(newDiff)
 }
 
-func CalibrateTPS(rate int) {
-	if rate <= TARGET_TPS {
+func CalibrateTPS(rate int, target int) {
+	if rate <= target {
 		return
 	}
 
-	avg := 1.0 / float64(rate) * 999999999
+	avg := 1.0 / float64(rate) * MAX_NANO
 
-	sleep := (float64(rate)/float64(TARGET_TPS) - 1) * avg
+	sleep := math.Floor(float64(rate)/float64(target)) * avg
 
 	time.Sleep(time.Duration(sleep) * time.Nanosecond)
+}
+
+func CorrectTargetTPS(realTPS int, target int) int {
+	if math.Abs(float64(TARGET_TPS-realTPS)) <= 10 {
+		return target + int(math.Ceil(float64(TARGET_TPS-realTPS)/2))
+	} else {
+		return target
+	}
 }

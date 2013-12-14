@@ -30,7 +30,10 @@ type World struct {
 }
 
 func NewWorld() *World {
-	return &World{Tick: big.NewInt(0)}
+	return &World{
+		Populations: make([]*evo.Population, 0),
+		Tick:        big.NewInt(0),
+	}
 }
 
 // adds some acid spots
@@ -56,6 +59,10 @@ func (w *World) SpawnClot() {
 // randomly spawns food
 func (w *World) SpawnFood() {
 	if !w.Notch(w.FoodTicks) {
+		return
+	}
+
+	if len(w.Food) > 100 {
 		return
 	}
 
@@ -179,4 +186,25 @@ func (w *World) GetNearestFellow(b *evo.Bacteria) *evo.Bacteria {
 // returns distance between two points
 func dist(x1 float64, y1 float64, x2 float64, y2 float64) float64 {
 	return math.Pow(x2-x1, 2) + math.Pow(y2-y1, 2)
+}
+
+func (w *World) Snapshot() *World {
+	braveNewWorld := NewWorld()
+
+	braveNewWorld.Tick = big.NewInt(0)
+	braveNewWorld.Tick.Set(w.Tick)
+
+	for _, p := range w.Populations {
+		newPop := p.Clone()
+		newPop.Chain = nil
+
+		braveNewWorld.Populations = append(braveNewWorld.Populations, newPop)
+	}
+
+	for _, f := range w.Food {
+		newFood := *f
+		braveNewWorld.Food = append(braveNewWorld.Food, &newFood)
+	}
+
+	return braveNewWorld
 }

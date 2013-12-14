@@ -134,3 +134,16 @@ func (p *Population) DeliverChild() {
 func (p *Population) String() string {
 	return fmt.Sprintf("TRAITS:\n%s\nBACTS:\n%s\n", p.Traits, p.Bacts)
 }
+
+func (p *Population) Clone() *Population {
+	newPop := &Population{
+		Chain: p.Chain,
+		Bacts: make([]*Bacteria, 0),
+	}
+
+	for _, b := range p.Bacts {
+		newPop.Bacts = append(newPop.Bacts, b.Clone())
+	}
+
+	return newPop
+}

@@ -32,9 +32,25 @@ func (ifk *Infektor) Catch() *evo.Population {
 }
 
 func (ifk *Infektor) Spread(pop *evo.Population) {
+	bacts := make([]*evo.Bacteria, 0)
+
 	if len(pop.Bacts) >= int(float64(ifk.amount)*ifk.rate) {
-		log.Println("spreading infektion with amount of", ifk.amount)
-		piligrims := pop.Slice(pop.Bacts[:ifk.amount])
+		for _, b := range pop.Bacts {
+			if b.Born {
+				bacts = append(bacts, b)
+			}
+
+			if len(bacts) >= ifk.amount {
+				break
+			}
+		}
+
+		if len(bacts) == 0 {
+			return
+		}
+
+		log.Println("spreading infektion with amount of", len(bacts))
+		piligrims := pop.Slice(bacts)
 		ifk.transport.Infect(piligrims)
 	}
 }

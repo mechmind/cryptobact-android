@@ -10,7 +10,11 @@ import "C"
 
 import (
 	"cryptobact/engine"
+
+	"log"
 )
+
+var _ = log.Println
 
 const UPDATER_QUEUE = 1
 
@@ -27,21 +31,30 @@ type updateRequest struct {
 }
 
 func newUpdater() *Updater {
-	return &Updater{make(chan *updateRequest, UPDATER_QUEUE), nil, make(chan struct{}),
+	return &Updater{
+		make(chan *updateRequest, UPDATER_QUEUE), nil,
+		make(chan struct{}),
 		make(chan chan struct{})}
 }
 
 func (r *Updater) AttachRender(rn *Render) {
 	r.render = rn
+	r.done <- struct{}{}
 }
 
 func (r *Updater) Update(w *engine.World) {
-	req := &updateRequest{w, make(chan struct{})}
 	select {
-	case r.reqs <- req:
-		<-req.done
+	case <-r.done:
+		req := &updateRequest{w.Snapshot(), make(chan struct{})}
+		r.reqs <- req
+		r.done = req.done
 	default:
 	}
+	//select {
+	//case r.reqs <- req:
+	//    <-req.done
+	//default:
+	//}
 }
 
 func (r *Updater) fetchUpdates() {
@@ -62,8 +75,6 @@ func (r *Updater) fetchUpdates() {
 				// send ok to engine
 				req.done <- struct{}{}
 			}
-		case <-r.done:
-			break
 		}
 	}
 }
@@ -90,7 +101,6 @@ func (r *Updater) handleUpdate(w *engine.World) {
 			pcolor = colorSet[pid]
 		}
 		for _, b := range p.Bacts {
-			//if b != nil && b.Born {
 			if b != nil {
 				if b.Born {
 					count := r.render.UpdateSet(ID_BACTERIA, float32(b.X), float32(b.Y), 1.0)

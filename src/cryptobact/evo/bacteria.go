@@ -180,3 +180,10 @@ func (b *Bacteria) String() string {
 		b.Born,
 	)
 }
+
+func (b *Bacteria) Clone() *Bacteria {
+	newBacteria := *b
+	// Chromosome intentionaly left same
+
+	return &newBacteria
+}

@@ -97,6 +97,7 @@ func (a ActionFuck) Apply() {
 	child := a.P.Fuck(a.Bact, a.Object)
 	child.X = (a.Object.X + a.Bact.X) / 2
 	child.Y = (a.Object.Y + a.Bact.Y) / 2
+	a.Bact.Energy -= a.Bact.GetFuckEnergy()
 }
 
 type ActionDie struct {

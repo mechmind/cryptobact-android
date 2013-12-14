@@ -2,27 +2,22 @@ package engine
 
 import (
 	"cryptobact/evo"
-	"log"
 	"math"
 	"math/rand"
 )
 
-const (
-	FOOD_NUTRITION = 6.0
-)
-
-var _ = log.Print
+type Decision struct {
+	Weight float64
+}
 
 type Action interface {
 	Apply()
 }
 
 type ActionMove struct {
-	X          float64
-	Y          float64
-	World      *World
-	Population *evo.Population
-	Bact       *evo.Bacteria
+	Bact *evo.Bacteria
+	X    float64
+	Y    float64
 }
 
 func (a ActionMove) Apply() {
@@ -65,121 +60,125 @@ func (a ActionMove) Apply() {
 		}
 	}
 
-	dx := (xt - x) / math.Abs(x-xt) * a.Population.GetGene(a.Bact, 6) / 100.0
-	dy := (yt - y) / math.Abs(y-yt) * a.Population.GetGene(a.Bact, 7) / 100.0
+	dx := (xt - x) / math.Abs(x-xt) * b.GetSpeed() / 100.0
+	dy := (yt - y) / math.Abs(y-yt) * b.GetSpeed() / 100.0
 
 	b.X += rand.NormFloat64()*0.01 + dx
 	b.Y += rand.NormFloat64()*0.01 + dy
 }
 
 type ActionAttack struct {
-	Object     *evo.Bacteria
-	Damage     float64
-	World      *World
-	Population *evo.Population
-	Bact       *evo.Bacteria
+	Bact   *evo.Bacteria
+	Object *evo.Bacteria
 }
 
 func (a ActionAttack) Apply() {
-	a.Object.Energy -= a.Damage
+	a.Object.Energy -= a.Bact.GetDamage()
 }
 
 type ActionEat struct {
-	Object     *Food
-	World      *World
-	Population *evo.Population
-	Bact       *evo.Bacteria
+	Bact   *evo.Bacteria
+	Object *Food
 }
 
 func (a ActionEat) Apply() {
 	b := a.Bact
-	b.Energy += float64(a.Population.GetGene(b, 12)) * FOOD_NUTRITION
+	b.Energy += b.GetMetabolism() * a.Object.Calories
 	a.Object.Eaten = true
 }
 
 type ActionFuck struct {
-	Object     *evo.Bacteria
-	World      *World
-	Population *evo.Population
-	Bact       *evo.Bacteria
+	Bact   *evo.Bacteria
+	Object *evo.Bacteria
+	P      *evo.Population
 }
 
 func (a ActionFuck) Apply() {
-	b := a.Bact
-	child := a.Population.Fuck(b, a.Object)
-	a_coeff := float64(a.Population.GetGene(a.Object, 0))
-	b_coeff := float64(a.Population.GetGene(b, 0))
-	a_lust := float64(a.Population.GetTrait(a.Object, "lust"))
-	b_lust := float64(a.Population.GetTrait(b, "lust"))
-
-	child.X = (a.Object.X + b.X) / 2
-	child.Y = (a.Object.Y + b.Y) / 2
-	child.TTL = int(10000 * float64(a.Population.GetGene(child, 7)) / 10)
-	child.Energy = 1000 * float64(a.Population.GetGene(child, 11)) / 10
-	child.RotationSpeed = 10.0 + float64(a.Population.GetGene(child, 4)/20)
-
-	a.Object.Energy -= b_coeff / b_lust * 80
-	b.Energy -= a_coeff / a_lust * 4
+	child := a.P.Fuck(a.Bact, a.Object)
+	child.X = (a.Object.X + a.Bact.X) / 2
+	child.Y = (a.Object.Y + a.Bact.Y) / 2
 }
 
 type ActionDie struct {
-	World      *World
-	Population *evo.Population
-	Bact       *evo.Bacteria
+	Bact *evo.Bacteria
+	P    *evo.Population
 }
 
 func (a ActionDie) Apply() {
 	b := a.Bact
-	a.Population.Kill(b)
+	a.P.Kill(b)
 }
 
-func GetAction(population *evo.Population, bact *evo.Bacteria,
-	world *World) Action {
-	if bact.TTL <= 0 || bact.Energy < 0 {
-		return ActionDie{world, population, bact}
+func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
+	if b.TTL <= 0 || b.Energy < 0 {
+		return ActionDie{b, p}
 	}
 
 	// params:
-	//   aggressiveness {0..1}
-	//   hunger {0..1}
-	//   fertility {0..1}
+	//   aggressions {0..1}
+	//   lust {0..1}
+	//   glut {0..1}
 	// resists:
 	//   acid {0..1}
 	//   clot {0..1}
 
-	//
+	// get nearest food, fellow, enemy and acid
+	// calculate weight for every action
+	// perform the action with the gratest weight
+	var action Action
+	max_weight := 0.0
+	if n_food := w.GetNearestFood(b); n_food != nil {
+		food_dist := dist(n_food.X, n_food.Y, b.X, b.Y)
+		weight := b.GetLust() / food_dist
+		max_weight = weight
+		if b.GetEatDist() <= food_dist {
+			action = ActionEat{b, n_food}
+		} else {
+			action = ActionMove{b, n_food.X, n_food.Y}
+		}
+	}
 
-	if rand.Intn(10) == 5 {
-		for _, b := range population.Bacts {
-			if b.Energy > 0 && b.Born {
-				return ActionAttack{b, 30, world, population, bact}
+	if n_fellow := w.GetNearestFellow(b); b.CanFuck() && n_fellow != nil {
+		fellow_dist := dist(n_fellow.X, n_fellow.Y, b.X, b.Y)
+		weight := b.GetGlut() / fellow_dist
+		if weight > max_weight {
+			max_weight = weight
+			if b.GetFuckDist() <= fellow_dist {
+				action = ActionFuck{b, n_fellow, p}
+			} else {
+				action = ActionMove{b, n_fellow.X, n_fellow.Y}
 			}
 		}
 	}
 
-	if rand.Intn(8) == 5 {
-		for _, f := range world.Food {
-			if f.Eaten == false {
-				return ActionEat{f, world, population, bact}
+	if n_enemy := w.GetNearestEnemy(b); n_enemy != nil {
+		enemy_dist := dist(n_enemy.X, n_enemy.Y, b.X, b.Y)
+		weight := b.GetAggression() / enemy_dist
+		if weight > max_weight {
+			max_weight = weight
+			if b.GetAttackDist() <= enemy_dist {
+				action = ActionAttack{b, n_enemy}
+			} else {
+				action = ActionMove{b, n_enemy.X, n_enemy.Y}
 			}
 		}
 	}
 
-	if rand.Intn(300) == 5 {
-		for _, b := range population.Bacts {
-			if b.Energy > 0 && b.Born {
-				return ActionFuck{b, world, population, bact}
-			}
+	if n_acid := w.GetNearestFood(b); n_acid != nil {
+		acid_dist := dist(n_acid.X, n_acid.Y, b.X, b.Y)
+		weight := b.GetAcidResist() / acid_dist
+		if weight > max_weight {
+			max_weight = weight
+			x, y := getRunawayPoint(b, n_acid.X, n_acid.Y)
+			action = ActionMove{b, x, y}
 		}
 	}
 
-	// FIXME replace with real target
-	//target_x := float64(world.Width) / 2.0
-	//target_y := float64(world.Height) / 2.0
-	if world.Notch(200) {
-		bact.TargetX = math.Abs(rand.NormFloat64())*3 + 10.0
-		bact.TargetY = math.Abs(rand.NormFloat64())*3 + 10.0
-	}
+	// TODO explore
+	return action
+}
 
-	return ActionMove{bact.TargetX, bact.TargetY, world, population, bact}
+func getRunawayPoint(b *evo.Bacteria, x float64, y float64) (float64, float64) {
+	// FIXME implement
+	return 0.0, 0.0
 }

@@ -86,9 +86,8 @@ func (p *Population) Fuck(a *Bacteria, b *Bacteria) *Bacteria {
 		}
 	}
 
-	new_bacteria := &Bacteria{
-		Chromosome: &Chromosome{Author: a.Chromosome.Author, DNA: new_dna},
-		Born:       false}
+	new_bacteria := NewBacteria(&Chromosome{Author: a.Chromosome.Author,
+		DNA: new_dna})
 
 	// @TODO hide interface
 	p.Chain.Miner.Prove(new_bacteria.Chromosome)

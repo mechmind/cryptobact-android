@@ -9,10 +9,12 @@ import (
 )
 
 const (
-	MAX_ACID_SPOTS = 5
-	MAX_ACID_CON   = 0.5
-	MAX_CLOT_SPOTS = 5
-	MAX_CLOT_DENS  = 0.5
+	MAX_ACID_SPOTS    = 5
+	MAX_ACID_CON      = 0.5
+	MAX_CLOT_SPOTS    = 5
+	MAX_CLOT_DENS     = 0.5
+	MIN_FOOD_CALORIES = 100.0
+	MAX_FOOD_CALORIES = 200.0
 )
 
 type World struct {
@@ -60,7 +62,11 @@ func (w *World) SpawnFood() {
 	for i := 0; i < w.FoodPerTick; i++ {
 		x := rand.Float64() * (float64(w.Width) - 1)
 		y := rand.Float64() * (float64(w.Height) - 1)
-		w.Food = append(w.Food, &Food{x, y, false})
+		min := MIN_FOOD_CALORIES
+		max := MAX_FOOD_CALORIES
+		r := rand.Float64()
+		calories := min + r*(max-min)
+		w.Food = append(w.Food, &Food{x, y, calories, false})
 	}
 }
 
@@ -83,7 +89,7 @@ func (w *World) GetOld(population *evo.Population) {
 		if !b.Born {
 			continue
 		}
-		b.TTL -= int(population.GetGene(b, 17)/10.0 + 1)
+		b.TTL -= 1
 	}
 }
 
@@ -118,24 +124,59 @@ func (w *World) ApplyAcid(population *evo.Population) {
 			dist := (math.Pow(a.X-b.X, 2.0) + math.Pow(a.Y-b.Y, 2.0))
 			damage += (a.Con - a.Con*resist) / (dist + 0.001)
 		}
-		b.Energy = math.Max(evo.B_MIN_ACID_HEALTH, b.Energy-damage)
+		b.Energy = math.Max(0, b.Energy-damage)
 	}
 }
 
-// descreases speed if bacteria is in clot spot
-func (w *World) ApplyClot(population *evo.Population) {
-	for _, b := range population.Bacts {
-		if !b.Born {
+// returns nearest food
+func (w *World) GetNearestFood(b *evo.Bacteria) *Food {
+	min_dist := math.Inf(0)
+	var result *Food
+	for _, f := range w.Food {
+		dist := dist(b.X, b.Y, f.X, f.Y)
+		if dist < min_dist {
+			result = f
+		}
+	}
+	return result
+}
+
+// returns nearest acid point
+func (w *World) GetNearestAcid(b *evo.Bacteria) *Acid {
+	min_dist := math.Inf(0)
+	var result *Acid
+	for _, a := range w.Acid {
+		dist := dist(b.X, b.Y, a.X, a.Y)
+		if dist < min_dist {
+			result = a
+		}
+	}
+	return result
+}
+
+// returns the nearest enemy bacteria
+func (w *World) GetNearestEnemy(b *evo.Bacteria) *evo.Bacteria {
+	// FIXME implement
+	return nil
+}
+
+// returns the nearest fellow bacteria
+func (w *World) GetNearestFellow(b *evo.Bacteria) *evo.Bacteria {
+	min_dist := math.Inf(0)
+	var result *evo.Bacteria
+	for _, f := range w.Populations[0].Bacts {
+		if f == b {
 			continue
 		}
-		resist := b.GetClotResist()
-		// TODO maybe, delimit by radius
-		slowdown := 0.0
-		for _, c := range w.Clot {
-			dist := (math.Pow(c.X-b.X, 2.0) + math.Pow(c.Y-b.Y, 2.0))
-			slowdown += (c.Density - c.Density*resist) / (dist + 0.001)
+		dist := dist(b.X, b.Y, f.X, f.Y)
+		if dist < min_dist {
+			result = f
 		}
-		b.Speed = math.Max(evo.B_MIN_SPEED, b.Speed-slowdown)
-		b.RotationSpeed = math.Max(evo.B_MIN_ROT_SPEED, b.RotationSpeed-slowdown)
 	}
+	return result
+}
+
+// returns distance between two points
+func dist(x1 float64, y1 float64, x2 float64, y2 float64) float64 {
+	return math.Pow(x2-x1, 2) + math.Pow(y2-y1, 2)
 }

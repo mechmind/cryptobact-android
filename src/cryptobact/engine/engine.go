@@ -157,16 +157,12 @@ func SimulatePopulation(world *World, population *evo.Population) {
 	population.DeliverChild()
 	world.GetOld(population)
 	world.ApplyAcid(population)
-	world.ApplyClot(population)
 }
 
 func InitPopulation(world *World, population *evo.Population) {
 	for _, b := range population.Bacts {
 		b.X = rand.Float64() * float64(world.Width)
 		b.Y = rand.Float64() * float64(world.Height)
-		b.TTL = int(10000 * float64(population.GetGene(b, 7)) / 10)
-		b.Energy = 1000 * float64(population.GetGene(b, 11)) / 10
-		b.RotationSpeed = 10.0 + float64(population.GetGene(b, 4)/20)
 	}
 }
 

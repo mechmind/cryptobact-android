@@ -2,6 +2,7 @@ package engine
 
 import (
 	"cryptobact/evo"
+	"log"
 	"math"
 	"math/rand"
 )
@@ -144,8 +145,10 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 	max_weight := 0.0
 	if n_food := w.GetNearestFood(b); n_food != nil {
 		food_dist := dist(n_food.X, n_food.Y, b.X, b.Y)
-		weight := b.GetLust() / food_dist
+		log.Println("food dist", food_dist)
+		weight := b.GetGlut() / food_dist
 		max_weight = weight
+		log.Println("mw food", max_weight)
 		if b.GetEatDist() <= food_dist {
 			action = ActionEat{b, n_food}
 		} else {
@@ -155,9 +158,11 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 
 	if n_fellow := w.GetNearestFellow(b); b.CanFuck() && n_fellow != nil {
 		fellow_dist := dist(n_fellow.X, n_fellow.Y, b.X, b.Y)
-		weight := b.GetGlut() / fellow_dist
+		log.Println("fell dist", fellow_dist)
+		weight := b.GetLust() / fellow_dist
 		if weight > max_weight {
 			max_weight = weight
+			log.Println("mw fell", max_weight)
 			if b.GetFuckDist() <= fellow_dist {
 				action = ActionFuck{b, n_fellow, p}
 			} else {
@@ -171,6 +176,7 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 		weight := b.GetAggression() / enemy_dist
 		if weight > max_weight {
 			max_weight = weight
+			log.Println("mw enmy", max_weight)
 			if b.GetAttackDist() <= enemy_dist {
 				action = ActionAttack{b, n_enemy}
 			} else {
@@ -181,13 +187,17 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 
 	if n_acid := w.GetNearestAcid(b); n_acid != nil {
 		acid_dist := dist(n_acid.X, n_acid.Y, b.X, b.Y)
+		log.Println("acid dist", acid_dist)
 		weight := 1 / (b.GetAcidResist() * acid_dist)
 		if weight > max_weight {
 			max_weight = weight
+			log.Println("mw acid", max_weight)
 			x, y := getRunawayPoint(b, n_acid.X, n_acid.Y)
 			action = ActionMove{b, x, y}
 		}
 	}
+
+	log.Println("max weight", max_weight)
 
 	if action == nil {
 		action = ActionProcrastinate{b}
@@ -197,6 +207,8 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 }
 
 func getRunawayPoint(b *evo.Bacteria, x float64, y float64) (float64, float64) {
-	// FIXME implement
-	return 0.0, 0.0
+	length := dist(b.X, b.Y, x, y)
+	x1 := (b.X - x) / length
+	y1 := (b.Y - y) / length
+	return b.X + x1, b.Y + y1
 }

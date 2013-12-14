@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	MAX_FOODS = 100
 	MAX_ACID_SPOTS    = 5
 	MAX_ACID_CON      = 0.5
 	MAX_CLOT_SPOTS    = 5
@@ -62,7 +63,7 @@ func (w *World) SpawnFood() {
 		return
 	}
 
-	if len(w.Food) > 100 {
+	if len(w.Food) > MAX_FOODS {
 		return
 	}
 
@@ -122,10 +123,9 @@ func (w *World) ApplyAcid(population *evo.Population) {
 			continue
 		}
 		resist := b.GetAcidResist()
-		// TODO maybe, delimit by radius
 		damage := 0.0
 		for _, a := range w.Acid {
-			dist := (math.Pow(a.X-b.X, 2.0) + math.Pow(a.Y-b.Y, 2.0))
+			dist := dist(a.X, a.Y, b.X, b.Y)
 			damage += (a.Con - a.Con*resist) / (dist + 0.001)
 		}
 		b.Energy = math.Max(0, b.Energy-damage)
@@ -185,7 +185,7 @@ func (w *World) GetNearestFellow(b *evo.Bacteria) *evo.Bacteria {
 
 // returns distance between two points
 func dist(x1 float64, y1 float64, x2 float64, y2 float64) float64 {
-	return math.Pow(x2-x1, 2) + math.Pow(y2-y1, 2)
+	return math.Sqrt(math.Pow(x2-x1, 2) + math.Pow(y2-y1, 2))
 }
 
 func (w *World) Snapshot() *World {

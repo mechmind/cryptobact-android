@@ -20,6 +20,7 @@ const (
 	B_BASE_EAT_DIST    = 5    // maximum eat distance
 	B_BASE_FUCK_DIST   = 5    // maximum fuck distance
 	B_BASE_ATTACK_DIST = 5    // maximum attack distance
+	B_BASE_PROCR_ENERGY = 5    // energy wiped while procrastinate (per tick)
 )
 
 // values specific for current bacteria sample
@@ -179,6 +180,12 @@ func (b *Bacteria) String() string {
 		b.Chromosome.DNA,
 		b.Born,
 	)
+}
+
+func (b *Bacteria) GetProcrEnergy() float64 {
+	coeff := 0.0
+	result := B_BASE_PROCR_ENERGY + B_BASE_PROCR_ENERGY*coeff
+	return result
 }
 
 func (b *Bacteria) Clone() *Bacteria {

@@ -14,6 +14,14 @@ type Action interface {
 	Apply()
 }
 
+type ActionProcrastinate struct {
+	Bact *evo.Bacteria
+}
+
+func (a ActionProcrastinate) Apply() {
+	a.Bact.Energy -= a.Bact.GetProcrEnergy()
+}
+
 type ActionMove struct {
 	Bact *evo.Bacteria
 	X    float64
@@ -175,7 +183,10 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 		}
 	}
 
-	// TODO explore
+	if action == nil {
+		action = ActionProcrastinate{b}
+	}
+
 	return action
 }
 

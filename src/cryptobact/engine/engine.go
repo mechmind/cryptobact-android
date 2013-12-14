@@ -179,9 +179,6 @@ func EstimateTPS(smallTick int, startTime time.Time, TPSAvg *[]int) int {
 
 func SimulatePopulation(world *World, population *evo.Population) {
 	for _, bact := range population.Bacts {
-		if !bact.Born {
-			continue
-		}
 		a := GetAction(population, bact, world)
 		if a != nil {
 			a.Apply()

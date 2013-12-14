@@ -125,6 +125,10 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 		return ActionDie{b, p}
 	}
 
+	if b.Born == false {
+		return nil
+	}
+
 	// params:
 	//   aggressions {0..1}
 	//   lust {0..1}

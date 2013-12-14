@@ -77,6 +77,22 @@ func (a ActionMove) Apply() {
 	b.Y += rand.NormFloat64()*0.01 + dy
 }
 
+type ActionInert struct {
+	Bact *evo.Bacteria
+}
+
+func (a ActionInert) Apply() {
+	b := a.Bact
+	x := b.X
+	y := b.Y
+	xt := b.Inertia.X
+	yt := b.Inertia.Y
+	dx := (xt - x) / math.Abs(x-xt) * b.GetCollisionSpeed() / 100.0
+	dy := (yt - y) / math.Abs(y-yt) * b.GetCollisionSpeed() / 100.0
+	b.X += rand.NormFloat64()*0.01 + dx
+	b.Y += rand.NormFloat64()*0.01 + dy
+}
+
 type ActionAttack struct {
 	Bact   *evo.Bacteria
 	Object *evo.Bacteria
@@ -107,8 +123,8 @@ func (a ActionFuck) Apply() {
 	child := a.P.Fuck(a.Bact, a.Object)
 	child.X = (a.Object.X + a.Bact.X) / 2
 	child.Y = (a.Object.Y + a.Bact.Y) / 2
-	a.Bact.Energy -= a.Bact.GetFuckEnergy() / float64(a.P.GetTrait(a.Bact, "lust") + 1)
-	a.Object.Energy -= a.Object.GetFuckEnergy() / float64(a.P.GetTrait(a.Object, "lust") + 1)
+	a.Bact.Energy -= a.Bact.GetFuckEnergy() / float64(a.P.GetTrait(a.Bact, "lust")+1)
+	a.Object.Energy -= a.Object.GetFuckEnergy() / float64(a.P.GetTrait(a.Object, "lust")+1)
 }
 
 type ActionDie struct {
@@ -126,8 +142,23 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 	//    return nil
 	//}
 
+	// just die if it is the time
 	if b.TTL <= 0 || b.Energy <= 0 {
 		return ActionDie{b, p}
+	}
+
+	// process inertion after collision
+	if b.Inertia != nil {
+		return ActionInert{b}
+	}
+
+	// detect collision and set inertion vector if required
+	n_bact := w.GetNearestBact(b)
+	n_dist := dist(b.X, b.Y, n_bact.X, n_bact.Y)
+	if n_dist < b.GetCollisionDist() {
+		ix, iy := getRunawayPoint(b, n_bact.X, n_bact.Y)
+		b.Inertia = &evo.Inertia{ix, iy}
+		return ActionInert{b}
 	}
 
 	if !b.Born {

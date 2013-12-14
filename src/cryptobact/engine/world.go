@@ -197,6 +197,25 @@ func (w *World) GetNearestFellow(b *evo.Bacteria) *evo.Bacteria {
 	return result
 }
 
+// returns the nearest fellow bacteria
+func (w *World) GetNearestBact(b *evo.Bacteria) *evo.Bacteria {
+	min_dist := math.Inf(0)
+	var result *evo.Bacteria
+	for _, p := range w.Populations {
+		for _, f := range p.Bacts {
+			if f == b {
+				continue
+			}
+			dist := dist(b.X, b.Y, f.X, f.Y)
+			if dist < min_dist {
+				min_dist = dist
+				result = f
+			}
+		}
+	}
+	return result
+}
+
 // returns distance between two points
 func dist(x1 float64, y1 float64, x2 float64, y2 float64) float64 {
 	return math.Sqrt(math.Pow(x2-x1, 2) + math.Pow(y2-y1, 2))

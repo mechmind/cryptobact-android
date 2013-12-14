@@ -4,25 +4,33 @@ import "fmt"
 
 // base values common for all bacterias
 const (
-	B_BASE_ENERGY       = 200    // energy points at birth
-	B_BASE_TTL          = 4000   // time to live in ticks
-	B_BASE_SPEED        = 0.7    // speed in pixels per tick
-	B_BASE_ROTATION     = 0.5    // rotation speed in degrees per tick
-	B_BASE_METABOLISM   = 0.75   // which part of eaten food becomes an energy
-	B_BASE_CLOT_RESIST  = 0.5    // clot resistance {0..1}
-	B_BASE_ACID_RESIST  = 0.5    // acid resistance {0..1}
-	B_BASE_FERTILITY    = 0.5    // fertility rank {0..1}
-	B_BASE_DAMAGE       = 2      // physical damage per tick
-	B_BASE_LUST         = 0.5    // love to food {0..1}
-	B_BASE_GLUT         = 0.5    // love to fuck {0..1}
-	B_BASE_AGGRESSION   = 0.5    // aggression {0..1}
-	B_BASE_FUCK_ENERGY  = 110    // energy spent to fuck
-	B_BASE_MOVE_ENERGY  = 0.001  // energy spent to move
-	B_BASE_PROCR_ENERGY = 0.0001 // energy wiped while procrastinate (per tick)
-	B_BASE_EAT_DIST     = 0.05   // maximum eat distance
-	B_BASE_FUCK_DIST    = 1.0    // maximum fuck distance
-	B_BASE_ATTACK_DIST  = 2.0    // maximum attack distance
+	B_BASE_ENERGY         = 200    // energy points at birth
+	B_BASE_TTL            = 4000   // time to live in ticks
+	B_BASE_SPEED          = 0.7    // speed in pixels per tick
+	B_BASE_ROTATION       = 0.5    // rotation speed in degrees per tick
+	B_BASE_METABOLISM     = 0.75   // which part of eaten food becomes an energy
+	B_BASE_CLOT_RESIST    = 0.5    // clot resistance {0..1}
+	B_BASE_ACID_RESIST    = 0.5    // acid resistance {0..1}
+	B_BASE_FERTILITY      = 0.5    // fertility rank {0..1}
+	B_BASE_DAMAGE         = 2      // physical damage per tick
+	B_BASE_LUST           = 0.5    // love to food {0..1}
+	B_BASE_GLUT           = 0.5    // love to fuck {0..1}
+	B_BASE_AGGRESSION     = 0.5    // aggression {0..1}
+	B_BASE_FUCK_ENERGY    = 110    // energy spent to fuck
+	B_BASE_MOVE_ENERGY    = 0.001  // energy spent to move
+	B_BASE_PROCR_ENERGY   = 0.0001 // energy wiped while procrastinate (per tick)
+	B_BASE_EAT_DIST       = 0.05   // maximum eat distance
+	B_BASE_FUCK_DIST      = 1.0    // maximum fuck distance
+	B_BASE_ATTACK_DIST    = 2.0    // maximum attack distance
+	B_BASE_COLLISION_DIST = 0.02   // collision detection radius
+	B_BASE_COLLISION_SPEED = 0.7 // speed after colision
 )
+
+// Inertia vector (generated as a result of collision)
+type Inertia struct {
+	X   float64
+	Y   float64
+}
 
 // values specific for current bacteria sample
 type Bacteria struct {
@@ -34,8 +42,7 @@ type Bacteria struct {
 	Angle      float64 `json:"-"`
 	Born       bool
 	Labouring  bool
-	TargetX    float64 `json:"-"`
-	TargetY    float64 `json:"-"`
+	Inertia    *Inertia `json:"-"`
 }
 
 func NewBacteria(c *Chromosome) *Bacteria {
@@ -51,8 +58,7 @@ func NewBacteria(c *Chromosome) *Bacteria {
 		0.0,
 		false,
 		false,
-		0.0,
-		0.0,
+		nil,
 	}
 }
 
@@ -203,6 +209,20 @@ func (b *Bacteria) String() string {
 func (b *Bacteria) GetProcrEnergy() float64 {
 	coeff := 0.0
 	result := B_BASE_PROCR_ENERGY + B_BASE_PROCR_ENERGY*coeff
+	return result
+}
+
+// FIXME get coeff from DNA
+func (b *Bacteria) GetCollisionDist() float64 {
+	coeff := 0.0
+	result := B_BASE_COLLISION_DIST + B_BASE_COLLISION_DIST*coeff
+	return result
+}
+
+// FIXME get coeff from DNA
+func (b *Bacteria) GetCollisionSpeed() float64 {
+	coeff := 0.0
+	result := B_BASE_COLLISION_SPEED + B_BASE_COLLISION_SPEED*coeff
 	return result
 }
 

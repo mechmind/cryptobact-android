@@ -26,7 +26,8 @@ const (
 	TRUE             = C.GL_TRUE
 	FALSE            = C.GL_FALSE
 	INFO_LOG_LENGTH  = C.GL_INFO_LOG_LENGTH
-	COMPILE_STATUS = C.GL_COMPILE_STATUS
+	COMPILE_STATUS   = C.GL_COMPILE_STATUS
+	LINK_STATUS      = C.GL_LINK_STATUS
 
 	TRIANGLES = C.GL_TRIANGLES
 	POINTS    = C.GL_POINTS
@@ -42,7 +43,7 @@ func GlBindBuffer(buf uint, mode uint) error {
 	return nil
 }
 
-func GlBufferData(glType uint, verts []Vertex, glMode uint) error {
+func GlBufferData(glType uint, verts []ColoredVertex, glMode uint) error {
 	C.glBufferData(C.GLenum(glType),
 		C.GLsizeiptr(len(verts)*int(unsafe.Sizeof(verts[0]))),
 		unsafe.Pointer(&verts[0]), C.GLenum(glMode))
@@ -60,26 +61,56 @@ func GlClearColor(r, g, b, a float32) error {
 	return nil
 }
 
+func GlClear(mask C.GLbitfield) error {
+	C.glClear(mask)
+	return nil
+}
+
 func GlEnable(capa uint) error {
 	C.glEnable(C.GLenum(capa))
 	return nil
 }
 
-func GlUseProgram()              {}
-func GlEnableVertexAttribArray() {}
-func GlUniformMatrix4fv()        {}
-func GlGetProgramiv()            {}
-func GlGetProgramInfoLog()       {}
+func GlCreateProgram() (uint, error) {
+	handle := C.glCreateProgram()
+	return uint(handle), nil
+}
 
-func GlShaderSource(handle uint, sources [][]string) error {
+func GlLinkProgram(handle uint) error {
+	C.glLinkProgram(C.GLuint(handle))
+	return nil
+}
+
+func GlGetProgramiv(handle uint, flag uint) (int, error) {
+	var dest int
+	C.glGetProgramiv(C.GLuint(handle), C.GLenum(flag), (*C.GLint)(unsafe.Pointer(&dest)))
+	return dest, nil
+}
+
+func GlGetProgramInfoLog(prog uint) (string, error) {
+	logLen, _ := GlGetProgramiv(prog, INFO_LOG_LENGTH)
+	buf := make([]byte, logLen)
+	C.glGetProgramInfoLog(C.GLuint(prog), C.GLsizei(logLen), (*C.GLsizei)(unsafe.Pointer(&logLen)),
+		(*C.GLchar)(unsafe.Pointer(&buf[0])))
+	return string(buf), nil
+}
+
+func GlUseProgram(handle uint) error {
+	C.glUseProgram(C.GLuint(handle))
+	return nil
+}
+
+func GlShaderSource(handle uint, sources []string) error {
 	sourcesC := make([]*C.GLchar, len(sources))
 	sourceLengths := make([]C.GLint, len(sources))
 
 	for idx, source := range sources {
-		sourcesC[idx] = (*C.GLchar)(unsafe.Pointer(&source[0]))
-		sourceLengths[idx] = C.GLint(len(source))
+		byteSrc := []byte(source)
+		sourcesC[idx] = (*C.GLchar)(unsafe.Pointer(&byteSrc[0]))
+		sourceLengths[idx] = C.GLint(len(byteSrc))
 	}
-	C.glShaderSource(C.GLenum(handle), C.GLint(len(sources)), &sourcesC[0], &sourceLengths[0])
+	C.glShaderSource(C.GLuint(handle), C.GLsizei(len(sources)),
+		(**C.GLchar)(unsafe.Pointer(&sourcesC[0])), (*C.GLint)(unsafe.Pointer(&sourceLengths[0])))
 	return nil
 }
 
@@ -93,12 +124,86 @@ func GlCompileShader(handle uint) error {
 	return nil
 }
 
+func GlAttachShader(prog, shader uint) error {
+	C.glAttachShader(C.GLuint(prog), C.GLuint(shader))
+	return nil
+}
+
 func GlGetShaderiv(handle uint, flag uint) (int, error) {
 	var dest int
-	C.glGetShaderiv(C.GLuint(handle), C.GLenum(flag), (*C.GLint)(&dest))
+	C.glGetShaderiv(C.GLuint(handle), C.GLenum(flag), (*C.GLint)(unsafe.Pointer(&dest)))
 	return dest, nil
 }
 
-func GlGetShaderInfoLog()  {}
-func GlGetProgramiv()      {}
-func GlGetProgramInfoLog() {}
+func GlGetShaderInfoLog(shader uint) (string, error) {
+	logLen, _ := GlGetShaderiv(shader, INFO_LOG_LENGTH)
+	buf := make([]byte, logLen)
+	C.glGetShaderInfoLog(C.GLuint(shader), C.GLsizei(logLen), (*C.GLsizei)(unsafe.Pointer(&logLen)),
+		(*C.GLchar)(unsafe.Pointer(&buf[0])))
+	return string(buf), nil
+}
+
+func GlGetAttribLocation(prog uint, name string) (int, error) {
+	nameC := C.CString(name)
+	defer C.free(unsafe.Pointer(nameC))
+	attrib := int(C.glGetAttribLocation(C.GLuint(prog), (*C.GLchar)(unsafe.Pointer(nameC))))
+	// FIXME: check that attrib != -1
+	return attrib, nil
+}
+
+func GlGetUniformLocation(prog uint, name string) (int, error) {
+	nameC := C.CString(name)
+	defer C.free(unsafe.Pointer(nameC))
+	attrib := int(C.glGetAttribLocation(C.GLuint(prog), (*C.GLchar)(unsafe.Pointer(nameC))))
+	// FIXME: check that attrib != -1
+	return attrib, nil
+}
+
+func GlEnableVertexAttribArray(handle int) error {
+	C.glEnableVertexAttribArray(C.GLuint(handle))
+	return nil
+}
+
+func GlVertexAttribPointer(handle int, count int, glType C.GLenum, normalized bool, stride int, data uintptr) error {
+	var norm C.GLboolean
+	if normalized {
+		norm = TRUE
+	} else {
+		norm = FALSE
+	}
+	C.glVertexAttribPointer(C.GLuint(handle), C.GLint(count), glType, norm, C.GLsizei(stride),
+		(unsafe.Pointer(data)))
+	return nil
+}
+
+func GlUniform2f(handle int, v1, v2 float32) error {
+	C.glUniform2f(C.GLint(handle), C.GLfloat(v1), C.GLfloat(v2))
+	return nil
+}
+
+func GlUniform3f(handle int, v1, v2, v3 float32) error {
+	C.glUniform3f(C.GLint(handle), C.GLfloat(v1), C.GLfloat(v2), C.GLfloat(v3))
+	return nil
+}
+
+func GlUniformMatrix4fv(handle int, count int, transpose bool, data []float32) error {
+	var tp C.GLboolean
+	if transpose {
+		tp = TRUE
+	} else {
+		tp = FALSE
+	}
+	C.glUniformMatrix4fv(C.GLint(handle), C.GLsizei(count), tp,
+		(*C.GLfloat)(unsafe.Pointer(&data[0])))
+	return nil
+}
+
+func GlGetString(name uint) string {
+	val := C.glGetString(C.GLenum(name))
+	return C.GoString((*C.char)(unsafe.Pointer(val)))
+}
+
+func GlViewport(x, y, szX, szY int) error {
+	C.glViewport(C.GLint(x), C.GLint(y), C.GLsizei(szX), C.GLsizei(szY))
+	return nil
+}

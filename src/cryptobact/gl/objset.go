@@ -42,7 +42,7 @@ func (b *Buffer) UploadData() error {
 		count += len(verts)
 	}
 
-	allVerts := make([]Vertex, count)
+	allVerts := make([]ColoredVertex, count)
 	count = 0
 	for _, verts := range vertSets {
 		count += copy(allVerts[count:], verts)

@@ -8,21 +8,22 @@ package main
 #cgo android LDFLAGS: -lGLESv2
 */
 import "C"
+import "cryptobact/gl"
 import "log"
 import "unsafe"
 
 type UInteractive interface {
-	Offset() (x, y C.GLfloat)
+	Offset() (x, y float32)
 	HandleTouch(action int, x, y float32)
 	HandleDraw()
 	HandleResize(w, h int)
 }
 
 type Screen struct {
-	offsetX, offsetY C.GLfloat
+	offsetX, offsetY float32
 }
 
-func (s *Screen) Offset() (x, y C.GLfloat) {
+func (s *Screen) Offset() (x, y float32) {
 	return s.offsetX, s.offsetY
 }
 
@@ -31,7 +32,7 @@ type touchTracker struct {
 	touching bool
 }
 
-func (t *touchTracker) Update(action int, x, y float32, ofx, ofy C.GLfloat) (x1, y1 float32) {
+func (t *touchTracker) Update(action int, x, y float32, ofx, ofy float32) (x1, y1 float32) {
 	x = x + float32(ofx)
 	y = float32(g.height) - y + float32(ofy)
 	switch action {
@@ -67,7 +68,7 @@ type gameScreen struct {
 	bottomRect simpleRect
 }
 
-func newGameScreen(offx, offy C.GLfloat, bottomRect simpleRect) *gameScreen {
+func newGameScreen(offx, offy float32, bottomRect simpleRect) *gameScreen {
 	return &gameScreen{Screen{offx, offy}, touchTracker{}, bottomRect}
 }
 
@@ -87,8 +88,8 @@ func (gs *gameScreen) HandleTouch(action int, x, y float32) {
 
 func (gs *gameScreen) HandleDraw() {
 	// render grid
-	C.glBindBuffer(C.GL_ARRAY_BUFFER, g.gridBufId)
-	C.glVertexAttribPointer(g.posAttr, 2, C.GL_FLOAT, C.GL_FALSE, 0, unsafe.Pointer(uintptr(0)))
+	gl.GlBindBuffer(gl.ARRAY_BUFFER, g.gridBufId)
+	gl.GlVertexAttribPointer(g.posAttr, 2, gl.FLOAT, false, 0, 0)
 	C.glDrawArrays(C.GL_POINTS, 0, (C.GLsizei)(len(g.verts)))
 	// world
 	if status := g.updater.isWorldUpdated(); status != nil {
@@ -109,15 +110,15 @@ type presetScreen struct {
 	bottomRect simpleRect
 }
 
-func newPresetScreen(offx, offy C.GLfloat, bottomRect simpleRect) *presetScreen {
+func newPresetScreen(offx, offy float32, bottomRect simpleRect) *presetScreen {
 	return &presetScreen{Screen{offx, offy}, touchTracker{}, bottomRect}
 }
 
 func (ps *presetScreen) HandleTouch(action int, x, y float32) {
 	// live drag
 	//    if ps.t.touching {
-	//        ps.Screen.offsetX += C.GLfloat(x - ps.t.x)
-	//        ps.Screen.offsetY -= C.GLfloat(y - ps.t.y)
+	//        ps.Screen.offsetX += float32(x - ps.t.x)
+	//        ps.Screen.offsetY -= float32(y - ps.t.y)
 	//    }
 
 	rx, ry := ps.t.Update(action, x, y, ps.Screen.offsetX, ps.Screen.offsetY)
@@ -136,8 +137,8 @@ func (ps *presetScreen) HandleDraw() {
 	sizex, sizey := g.width, g.height
 	basex, basey := ps.Offset()
 	for idx, slider := range g.sliders {
-		ypos := basey + C.GLfloat(sizey) - C.GLfloat(idx)*(SLIDER_Y_SIZE+SLIDER_Y_MARGIN) - SLIDER_Y_PAD
-		lines, triags := slider.Vertexes(basex, ypos, C.GLfloat(sizex), C.GLfloat(sizey))
+		ypos := basey + float32(sizey) - float32(idx)*(SLIDER_Y_SIZE+SLIDER_Y_MARGIN) - SLIDER_Y_PAD
+		lines, triags := slider.Vertexes(basex, ypos, float32(sizex), float32(sizey))
 		g.sliderLineBuffer = append(g.sliderLineBuffer, lines...)
 		g.sliderTrBuffer = append(g.sliderTrBuffer, triags...)
 	}
@@ -168,7 +169,7 @@ func newHookerScreen() *hookerScreen {
 	return &hookerScreen{}
 }
 
-func (hs *hookerScreen) Offset() (x, y C.GLfloat) {
+func (hs *hookerScreen) Offset() (x, y float32) {
 	return 0, 0
 }
 func (hs *hookerScreen) HandleTouch(action int, x, y float32) {}
@@ -200,8 +201,8 @@ func (g *game) createScreens(w, h int) {
 
 	bottomRect := simpleRect{0, 0, fw, bottompad}
 
-	g.gameScreen = newGameScreen(C.GLfloat(hpad), C.GLfloat(bottompad), bottomRect)
-	//g.presetScreen = newPresetScreen(C.GLfloat(fw * 2), 0, bottomRect)
+	g.gameScreen = newGameScreen(float32(hpad), float32(bottompad), bottomRect)
+	//g.presetScreen = newPresetScreen(float32(fw * 2), 0, bottomRect)
 	g.presetScreen = newPresetScreen(0, 0, bottomRect)
 
 	g.activateScreen(g.gameScreen)

@@ -11,17 +11,16 @@ package gl
 */
 import "C"
 import "errors"
-import "unsafe"
 
 func GetShaderInfoLog()  {}
 func GetProgramInfoLog() {}
 
-func LoadShader(shType int, source string) (uint, error) {
+func LoadShader(shType uint, source string) (uint, error) {
 	handle, _ := GlCreateShader(shType)                    // FIXME: handle error
 	GlShaderSource(shType, []string{source})               // FIXME: handle error
 	GlCompileShader(handle)                                // FIXME: handle error
 	isCompiled, _ := GlGetShaderiv(handle, COMPILE_STATUS) // FIXME: handle f* error!
-	if isCompiled == 0 {
+	if isCompiled != TRUE {
 		return 0, errors.New("cannot compile shader")
 	}
 	return handle, nil
@@ -29,5 +28,30 @@ func LoadShader(shType int, source string) (uint, error) {
 
 func CreateProgram(vertShader, fragShader string) (uint, error) {
 	vxHandle, _ := LoadShader(VERTEX_SHADER, vertShader)
-	fragHandle, _ := LoadShader(FRAGMENT_SHADER, fragHandle)
+	fragHandle, _ := LoadShader(FRAGMENT_SHADER, fragShader)
+
+	prog, _ := GlCreateProgram()
+
+	GlAttachShader(prog, vxHandle)
+	GlAttachShader(prog, fragHandle)
+
+	GlLinkProgram(prog)
+
+	linkOk, _ := GlGetProgramiv(prog, LINK_STATUS)
+	if linkOk != TRUE {
+		log, _ := GlGetProgramInfoLog(prog)
+		return 0, errors.New("failed to link program: " + log)
+	}
+	return prog, nil
+}
+
+func MakeProjectionMatrix(left, right, bottom, top, near, far float32, matrix []float32) []float32 {
+	matrix[0] = 2.0 / (right - left)
+	matrix[5] = 2.0 / (top - bottom)
+	matrix[10] = -2.0 / (far - near)
+	matrix[12] = -(right + left) / (right - left)
+	matrix[13] = -(top + bottom) / (top - bottom)
+	matrix[14] = -(far + near) / (far - near)
+	matrix[15] = 1.0
+	return matrix
 }

@@ -119,7 +119,7 @@ func (a ActionDie) Apply() {
 }
 
 func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
-	if b.TTL <= 0 || b.Energy < 0 {
+	if b.TTL <= 0 || b.Energy <= 0 {
 		return ActionDie{b, p}
 	}
 

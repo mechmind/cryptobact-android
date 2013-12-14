@@ -45,24 +45,26 @@ func (a ActionMove) Apply() {
 	cos := ((math.Pow(tb, 2) + math.Pow(tc, 2) - math.Pow(ta, 2)) / (2 * tb * tc))
 	gamma := math.Acos(cos) * 180 / math.Pi
 
+	b.Energy -= b.GetMoveEnergy()
+
 	direction := "ccw"
 	if (math.Cos(xt) - math.Sin(yt)) < 0 {
 		direction = "cw"
 	}
 
-	if gamma < b.RotationSpeed {
+	if gamma < b.GetRotation() {
 		b.Angle = gamma
 		return
 	}
 
 	if direction == "cw" {
-		b.Angle -= b.RotationSpeed
+		b.Angle -= b.GetRotation()
 
 		if b.Angle < 0 {
 			b.Angle += 360
 		}
 	} else {
-		b.Angle += b.RotationSpeed
+		b.Angle += b.GetRotation()
 		if b.Angle > 359 {
 			b.Angle -= 360
 		}
@@ -175,7 +177,7 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 
 	if n_acid := w.GetNearestAcid(b); n_acid != nil {
 		acid_dist := dist(n_acid.X, n_acid.Y, b.X, b.Y)
-		weight := b.GetAcidResist() / acid_dist
+		weight := 1 / (b.GetAcidResist() * acid_dist)
 		if weight > max_weight {
 			max_weight = weight
 			x, y := getRunawayPoint(b, n_acid.X, n_acid.Y)

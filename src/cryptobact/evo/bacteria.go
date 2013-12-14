@@ -4,38 +4,37 @@ import "fmt"
 
 // base values common for all bacterias
 const (
-	B_BASE_ENERGY      = 10   // energy points at birth
-	B_BASE_TTL         = 6000 // time to live in ticks
-	B_BASE_SPEED       = 0.5 // speed in pixels per tick
-	B_BASE_ROTATION    = 0.05 // rotation speed in degrees per tick
-	B_BASE_METABOLISM  = 0.75 // which part of eaten food becomes an energy
-	B_BASE_CLOT_RESIST = 0.5  // clot resistance {0..1}
-	B_BASE_ACID_RESIST = 0.5  // acid resistance {0..1}
-	B_BASE_FERTILITY   = 0.5  // fertility rank {0..1}
-	B_BASE_DAMAGE      = 2    // physical damage per tick
-	B_BASE_LUST        = 0.5  // love to food {0..1}
-	B_BASE_GLUT        = 0.5  // love to fuck {0..1}
-	B_BASE_AGGRESSION  = 0.5  // aggression {0..1}
-	B_BASE_FUCK_ENERGY = 100  // energy points required to fuck
-	B_BASE_EAT_DIST    = 0.05    // maximum eat distance
-	B_BASE_FUCK_DIST   = 0.05    // maximum fuck distance
-	B_BASE_ATTACK_DIST = 0.05    // maximum attack distance
-	B_BASE_PROCR_ENERGY = 5    // energy wiped while procrastinate (per tick)
+	B_BASE_ENERGY       = 200  // energy points at birth
+	B_BASE_TTL          = 6000 // time to live in ticks
+	B_BASE_SPEED        = 0.5  // speed in pixels per tick
+	B_BASE_ROTATION     = 0.5  // rotation speed in degrees per tick
+	B_BASE_METABOLISM   = 0.75 // which part of eaten food becomes an energy
+	B_BASE_CLOT_RESIST  = 0.5  // clot resistance {0..1}
+	B_BASE_ACID_RESIST  = 0.5  // acid resistance {0..1}
+	B_BASE_FERTILITY    = 0.5  // fertility rank {0..1}
+	B_BASE_DAMAGE       = 2    // physical damage per tick
+	B_BASE_LUST         = 0.5  // love to food {0..1}
+	B_BASE_GLUT         = 0.5  // love to fuck {0..1}
+	B_BASE_AGGRESSION   = 0.5  // aggression {0..1}
+	B_BASE_FUCK_ENERGY  = 20   // energy spent to fuck
+	B_BASE_MOVE_ENERGY  = 0.5  // energy spent to move
+	B_BASE_PROCR_ENERGY = 0.5  // energy wiped while procrastinate (per tick)
+	B_BASE_EAT_DIST     = 0.05 // maximum eat distance
+	B_BASE_FUCK_DIST    = 0.05 // maximum fuck distance
+	B_BASE_ATTACK_DIST  = 0.05 // maximum attack distance
 )
 
 // values specific for current bacteria sample
 type Bacteria struct {
-	Chromosome    *Chromosome
-	TTL           int     // current ttl
-	Energy        float64 // current energy
-	X             float64 `json:"-"`
-	Y             float64 `json:"-"`
-	Angle         float64 `json:"-"`
-	Born          bool
-	Speed         float64 `json:"-"`
-	RotationSpeed float64 `json:"-"`
-	TargetX       float64 `json:"-"`
-	TargetY       float64 `json:"-"`
+	Chromosome *Chromosome
+	TTL        int     // current ttl
+	Energy     float64 // current energy
+	X          float64 `json:"-"`
+	Y          float64 `json:"-"`
+	Angle      float64 `json:"-"`
+	Born       bool
+	TargetX    float64 `json:"-"`
+	TargetY    float64 `json:"-"`
 }
 
 func NewBacteria(c *Chromosome) *Bacteria {
@@ -50,8 +49,6 @@ func NewBacteria(c *Chromosome) *Bacteria {
 		0.0,
 		0.0,
 		false,
-		0.0,
-		0.0,
 		0.0,
 		0.0,
 	}
@@ -182,9 +179,17 @@ func (b *Bacteria) String() string {
 	)
 }
 
+// FIXME get coeff from DNA
 func (b *Bacteria) GetProcrEnergy() float64 {
 	coeff := 0.0
 	result := B_BASE_PROCR_ENERGY + B_BASE_PROCR_ENERGY*coeff
+	return result
+}
+
+// FIXME get coeff from DNA
+func (b *Bacteria) GetMoveEnergy() float64 {
+	coeff := 0.0
+	result := B_BASE_MOVE_ENERGY + B_BASE_MOVE_ENERGY*coeff
 	return result
 }
 

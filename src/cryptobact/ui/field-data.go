@@ -74,7 +74,7 @@ var bacteriaVXShader = `
     attribute vec4 position;
 
     void main() {
-        gl_Position = vec4(position.xy+offset, position.zw);
+        gl_Position = mvp * vec4(position.xy+offset, position.zw);
     }
 `
 var bacteriaFragShader = `

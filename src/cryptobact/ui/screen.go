@@ -39,23 +39,47 @@ type Screen struct {
 }
 
 type touchTracker struct {
-	x, y     float32
-	touching bool
+	x, y             float32
+	touchx, touchy   float32
+	screenx, screeny float32
+	bounds           SimpleRect
+	touching         bool
 }
 
-func (t *touchTracker) Update(action int, x, y float32) {
-	t.x, t.y = x, y
+func fmax(v1, v2 float32) float32 {
+	if v1 > v2 {
+		return v1
+	}
+	return v2
+}
+
+func fmin(v1, v2 float32) float32 {
+	if v1 < v2 {
+		return v1
+	}
+	return v2
+}
+
+func (t *touchTracker) Update(action int, x, y float32) (x1, y1 float32) {
 	switch action {
 	case AMOTION_EVENT_ACTION_UP:
 		t.touching = false
 	case AMOTION_EVENT_ACTION_DOWN:
 		t.touching = true
-		t.x, t.y = x, y
+		t.touchx = x
+		t.touchy = y
 	case AMOTION_EVENT_ACTION_MOVE:
 		if !t.touching {
 			break
 		}
+		dx := t.x + (x - t.touchx)
+		dy := t.y - (y - t.touchy)
+		t.x = fmax(fmin(dx, t.bounds.X2-t.screenx), t.bounds.X1)
+		t.y = fmax(fmin(dy, t.bounds.Y2-t.screeny), t.bounds.Y1)
+		t.touchx = x
+		t.touchy = y
 	}
+	return t.x, t.y
 }
 
 type SimpleRect struct {
@@ -82,17 +106,28 @@ func (fs *FieldScreen) Init(w, h int) {
 	if err != nil {
 		panic(err)
 	}
+	scrx := float32(w)
+	scry := float32(h)
+	fs.t.screenx = scrx
+	fs.t.screeny = scry
+	fs.t.bounds = SimpleRect{-2 * scrx, -2 * scry, 2 * scrx, 2 * scry}
+
+	log.Println("screen: initialized viewport", w, h)
 }
 
-func (gs *FieldScreen) HandleTouch(action int, x, y float32) {
+func (fs *FieldScreen) HandleTouch(action int, x, y float32) {
 	// open control screen, if clicked in bottom part
 
-	if action == AMOTION_EVENT_ACTION_UP && gs.bottomRect.In(x, y) {
+	ox, oy := fs.t.Update(action, x, y)
+	if action == AMOTION_EVENT_ACTION_UP && fs.bottomRect.In(x, y) {
 		log.Println("screen: game screen throws to preset")
-		gs.screener.Switch(ID_PRESET_SCREEN)
+		//fs.screener.Switch(ID_PRESET_SCREEN)
 	} else if action == AMOTION_EVENT_ACTION_UP {
 		log.Println("screen: EVENT UP", x, y)
 	}
+	fs.F.offx = ox
+	fs.F.offy = oy
+	log.Println("screen: offset is", ox, oy)
 }
 
 func (fs *FieldScreen) HandleDraw() {

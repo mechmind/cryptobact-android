@@ -61,7 +61,7 @@ func Java_net_goandroid_cryptobact_Engine_onTouch(env *C.JNIEnv, clazz C.jclass,
 	case C.AMOTION_EVENT_ACTION_UP:
 		actionI = ui.AMOTION_EVENT_ACTION_UP
 	case C.AMOTION_EVENT_ACTION_DOWN:
-		actionI = ui.AMOTION_EVENT_ACTION_UP
+		actionI = ui.AMOTION_EVENT_ACTION_DOWN
 	case C.AMOTION_EVENT_ACTION_MOVE:
 		actionI = ui.AMOTION_EVENT_ACTION_MOVE
 	}

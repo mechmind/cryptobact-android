@@ -13,6 +13,8 @@ type Field struct {
 	vxShader, fragShader, prog uint
 	// shader props
 	position, mvp, offset, color int
+	// offset
+	offx, offy float32
 }
 
 func NewField() *Field {
@@ -70,41 +72,45 @@ func (f *Field) Init(mvp []float32) error {
 	}
 	f.buffers[ID_BACTERIA_BODY].Binder = gl.ShaderBinder(bactBinder)
 	f.buffers[ID_MARKUP].Binder = gl.ShaderBinder(gridBinder)
-	//gl.GlUniformMatrix4fv(f.mvp, 1, false, mvp)
+	gl.GlUniformMatrix4fv(f.mvp, 1, false, mvp)
 	// set up grid buffer
-	//f.buffers[ID_MARKUP].Append(makeGridPoints(X_COUNT*STEP, Y_COUNT*STEP, STEP))
-	//f.buffers[ID_MARKUP].Flush()
+	f.buffers[ID_MARKUP].Append(makeGridPoints(X_COUNT*STEP, Y_COUNT*STEP, STEP))
+	f.buffers[ID_MARKUP].Flush()
 
-	verts := makeGridPoints(1.0, 1.0, 0.05)
-	verts = append(verts, 0.1, 0.1, 0.5, 0.5, 1.0, 1.0, 2.0, 2.0, 10.0, 10.0, 50.0, 50.0)
-	b := f.buffers[ID_MARKUP]
-	b.BufLen = len(verts)
-	gl.GlBindBuffer(gl.ARRAY_BUFFER, b.GlBuffer)
-	gl.ErrPanic()
-	gl.GlBufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW)
-	gl.ErrPanic()
+	//	verts := makeGridPoints(1.0, 1.0, 0.3)
+	//	verts = append(verts, 0.1, 0.1, 0.5, 0.5, 1.0, 1.0, 2.0, 2.0, 10.0, 10.0, 50.0, 50.0)
+	//	b := f.buffers[ID_MARKUP]
+	//	b.BufLen = len(verts)
+	//	gl.GlBindBuffer(gl.ARRAY_BUFFER, b.GlBuffer)
+	//	gl.ErrPanic()
+	//	gl.GlBufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW)
+	//	gl.ErrPanic()
+	//	gl.GlVertexAttribPointer(f.position, 2, gl.FLOAT, false, 0, 0)
+	//	gl.ErrPanic()
 	return nil
 }
 
 func (f *Field) Draw(mvp []float32) {
-	//f.buffers[ID_MARKUP].Binder(f.buffers[ID_MARKUP])
-	log.Println("field: rendering grid", f.buffers[ID_MARKUP].BufLen)
+	f.buffers[ID_MARKUP].Binder(f.buffers[ID_MARKUP])
+	//log.Println("field: rendering grid", f.buffers[ID_MARKUP].BufLen)
 
 	// remove after debug
 	b := f.buffers[ID_MARKUP]
 	gl.GlBindBuffer(gl.ARRAY_BUFFER, b.GlBuffer)
 	gl.ErrPanic()
-	gl.GlEnableVertexAttribArray(f.position)
+	//gl.GlEnableVertexAttribArray(f.position)
 	gl.ErrPanic()
-	gl.GlVertexAttribPointer(f.position, 2, gl.FLOAT, false, 0, 0)
+	//gl.GlVertexAttribPointer(f.position, 2, gl.FLOAT, false, 0, 0)
 	gl.ErrPanic()
 	//gl.GlUniformMatrix4fv(f.mvp, 1, false, mvp)
 	//gl.ErrPanic()
 	//gl.GlUseProgram(f.prog)
 	//gl.ErrPanic()
 	gl.GlUniform3f(f.color, 1.0, 1.0, 1.0)
+	gl.GlUniform2f(f.offset, f.offx, f.offy)
 	//gl.GlDrawArrays(gl.POINTS, 0, b.BufLen)
-	gl.GlDrawArrays(gl.TRIANGLES, 0, b.BufLen)
+	//gl.GlClear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	gl.GlDrawArrays(gl.POINTS, 0, b.BufLen)
 
 	//f.buffers[ID_BACTERIA_BODY].Binder(f.buffers[ID_BACTERIA_BODY])
 	//gl.DrawArrays

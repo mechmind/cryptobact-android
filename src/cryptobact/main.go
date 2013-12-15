@@ -53,7 +53,7 @@ func (game *game) resize(width, height int) {
 	//game.offsetY = float32(height-Y_COUNT*STEP) / 2.0
 
 	gl.MakeProjectionMatrix(0, float32(width)-1, 0, float32(height)-1, 1.0, -1.0, game.mvp)
-	//gl.GlViewport(0, 0, width, height)
+	gl.GlViewport(0, 0, width, height)
 
 	game.currentScreen.HandleResize(width, height)
 }
@@ -94,6 +94,7 @@ func (game *game) initGL() {
 }
 
 func (game *game) drawFrame() {
+	gl.GlClear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	game.currentScreen.HandleDraw()
 }
 

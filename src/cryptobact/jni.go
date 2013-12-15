@@ -9,6 +9,7 @@ package main
 import "C"
 import "log"
 import "unsafe"
+import "runtime/debug"
 import "cryptobact/ui"
 
 // Use JNI_OnLoad to ensure that the go runtime is initialized at a predictable time,
@@ -22,7 +23,7 @@ func JNI_OnLoad(vm *C.JavaVM, reserved unsafe.Pointer) C.jint {
 func Java_net_goandroid_cryptobact_Engine_drawFrame(env *C.JNIEnv, clazz C.jclass) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Fatalf("panic: drawFrame: %v\n", err)
+			log.Fatalf("panic: drawFrame: %v\nstack:\n%s", err, string(debug.Stack()))
 		}
 	}()
 	g.drawFrame()
@@ -32,7 +33,7 @@ func Java_net_goandroid_cryptobact_Engine_drawFrame(env *C.JNIEnv, clazz C.jclas
 func Java_net_goandroid_cryptobact_Engine_init(env *C.JNIEnv, clazz C.jclass) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Fatalf("panic: init: %v\n", err)
+			log.Fatalf("panic: init: %v\nstack:\n%s", err, string(debug.Stack()))
 		}
 	}()
 	g.initGL()
@@ -42,7 +43,7 @@ func Java_net_goandroid_cryptobact_Engine_init(env *C.JNIEnv, clazz C.jclass) {
 func Java_net_goandroid_cryptobact_Engine_resize(env *C.JNIEnv, clazz C.jclass, width, height C.jint) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Fatalf("panic: resize: %v\n", err)
+			log.Fatalf("panic: resize: %v\nstack:\n%s", err, string(debug.Stack()))
 		}
 	}()
 	g.resize(int(width), int(height))
@@ -52,7 +53,7 @@ func Java_net_goandroid_cryptobact_Engine_resize(env *C.JNIEnv, clazz C.jclass, 
 func Java_net_goandroid_cryptobact_Engine_onTouch(env *C.JNIEnv, clazz C.jclass, action C.jint, x, y C.jfloat) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Fatalf("panic: resize: %v\n", err)
+			log.Fatalf("panic: touch: %v\nstack:\n%s", err, string(debug.Stack()))
 		}
 	}()
 	actionI := int(action)

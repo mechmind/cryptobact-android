@@ -33,7 +33,7 @@ func newUpdater() *Updater {
 
 func (r *Updater) AttachField(f *ui.Field) {
 	r.field = f
-	r.done <- struct{}{}
+	//r.done <- struct{}{}
 }
 
 func (r *Updater) Update(w *engine.World) {

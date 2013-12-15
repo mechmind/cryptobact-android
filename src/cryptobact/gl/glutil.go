@@ -11,14 +11,18 @@ package gl
 */
 import "C"
 import "errors"
+import "fmt"
 
 func GetShaderInfoLog()  {}
 func GetProgramInfoLog() {}
 
 func LoadShader(shType uint, source string) (uint, error) {
-	handle, _ := GlCreateShader(shType)                    // FIXME: handle error
-	GlShaderSource(shType, []string{source})               // FIXME: handle error
-	GlCompileShader(handle)                                // FIXME: handle error
+	handle, _ := GlCreateShader(shType) // FIXME: handle error
+	ErrPanic()
+	GlShaderSource(handle, []string{source}) // FIXME: handle error
+	ErrPanic()
+	GlCompileShader(handle) // FIXME: handle error
+	ErrPanic()
 	isCompiled, _ := GlGetShaderiv(handle, COMPILE_STATUS) // FIXME: handle f* error!
 	if isCompiled != TRUE {
 		return 0, errors.New("cannot compile shader")
@@ -33,9 +37,12 @@ func CreateProgram(vertShader, fragShader string) (uint, error) {
 	prog, _ := GlCreateProgram()
 
 	GlAttachShader(prog, vxHandle)
+	ErrPanic()
 	GlAttachShader(prog, fragHandle)
+	ErrPanic()
 
 	GlLinkProgram(prog)
+	ErrPanic()
 
 	linkOk, _ := GlGetProgramiv(prog, LINK_STATUS)
 	if linkOk != TRUE {
@@ -54,4 +61,11 @@ func MakeProjectionMatrix(left, right, bottom, top, near, far float32, matrix []
 	matrix[14] = -(far + near) / (far - near)
 	matrix[15] = 1.0
 	return matrix
+}
+
+func ErrPanic() {
+	err := C.glGetError()
+	if err != C.GL_NO_ERROR {
+		panic(fmt.Errorf("gl error: %v", err))
+	}
 }

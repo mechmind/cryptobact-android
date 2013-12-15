@@ -50,12 +50,42 @@ var mainSet = []*template{
 	},
 	ID_MARKUP: &template{
 		verts: []float32{
-			0, 0,
+			1, 1,
 		},
 		glType: uint(gl.POINTS),
 		color:  [3]byte{250, 160, 0},
 	},
 }
+
+//var bacteriaVXShader = `
+//    uniform vec2 offset;
+//    uniform mat4 mvp;
+//    attribute vec4 position;
+//	attribute vec4 color;
+//
+//    void main() {
+//        gl_Position = mvp * vec4(position.xy+offset, position.zw);
+//    }
+//`
+
+var bacteriaVXShader = `
+    uniform vec2 offset;
+    uniform mat4 mvp;
+    attribute vec4 position;
+
+    void main() {
+        gl_Position = vec4(position.xy+offset, position.zw);
+    }
+`
+var bacteriaFragShader = `
+    precision mediump float;
+
+    uniform vec3 color;
+
+    void main() {
+        gl_FragColor = vec4(color.xyz, 1.0);
+    }
+`
 
 /*
 var mainSet = []*gl.ObjectSet{

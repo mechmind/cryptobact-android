@@ -73,11 +73,16 @@ type FieldScreen struct {
 	bottomRect SimpleRect
 }
 
-func NewGameScreen(sc Screener, bottomRect SimpleRect) *FieldScreen {
+func NewFieldScreen(sc Screener, bottomRect SimpleRect) *FieldScreen {
 	return &FieldScreen{Screen{sc}, NewField(), touchTracker{}, bottomRect}
 }
 
-func (gs *FieldScreen) Init(w, h int) {}
+func (fs *FieldScreen) Init(w, h int) {
+	err := fs.F.Init(fs.screener.GetProjectionMatrix())
+	if err != nil {
+		panic(err)
+	}
+}
 
 func (gs *FieldScreen) HandleTouch(action int, x, y float32) {
 	// open control screen, if clicked in bottom part
@@ -90,8 +95,11 @@ func (gs *FieldScreen) HandleTouch(action int, x, y float32) {
 	}
 }
 
-func (gs *FieldScreen) HandleDraw() {
+func (fs *FieldScreen) HandleDraw() {
 	// render grid
+
+	mvp := fs.screener.GetProjectionMatrix()
+	fs.F.Draw(mvp)
 	//	gl.GlBindBuffer(gl.ARRAY_BUFFER, g.gridBufId)
 	//	gl.GlVertexAttribPointer(g.posAttr, 2, gl.FLOAT, false, 0, 0)
 	//	C.glDrawArrays(C.GL_POINTS, 0, (C.GLsizei)(len(g.verts)))
@@ -106,7 +114,7 @@ func (gs *FieldScreen) HandleDraw() {
 	//	g.render.RenderAll()
 }
 
-func (gs *FieldScreen) HandleResize(w, h int) {}
+func (fs *FieldScreen) HandleResize(w, h int) {}
 
 type PresetScreen struct {
 	Screen

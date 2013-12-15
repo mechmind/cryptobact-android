@@ -1,30 +1,40 @@
 package gl
 
-type shaderBinder func(set *Buffer) error
+import (
+	"log"
+)
+
+type ShaderBinder func(set *Buffer) error
 
 type Buffer struct {
-	glType   uint
-	glBuffer uint
-	buf      []float32
-	binder   shaderBinder
+	GlType   uint
+	GlBuffer uint
+	Buf      []float32
+	BufLen   int
+	Binder   ShaderBinder
 }
 
-func NewBuffer(glType uint, binder shaderBinder) *Buffer {
+func NewBuffer(glType uint, binder ShaderBinder) *Buffer {
 	glBuf, _ := GlGenBuffer() // FIXME: handle error
-	return &Buffer{glType, glBuf, nil, binder}
+	log.Println("gl: allocated buffer", glBuf)
+	ErrPanic()
+	return &Buffer{glType, glBuf, nil, 0, binder}
 }
 
 func (b *Buffer) Append(data []float32) {
-	b.buf = append(b.buf, data...)
+	b.Buf = append(b.Buf, data...)
 }
 
 // flush data to opengl
 // TODO: implement incremental update
 func (b *Buffer) Flush() error {
 	// upload vertice + meta to opengl
-	GlBindBuffer(ARRAY_BUFFER, b.glBuffer)
-	GlBufferData(b.glType, b.buf, STATIC_DRAW)
+	GlBindBuffer(ARRAY_BUFFER, b.GlBuffer)
+	ErrPanic()
+	GlBufferData(ARRAY_BUFFER, b.Buf, STATIC_DRAW)
+	ErrPanic()
 	// FIXME: rebind shader attrs
-	b.buf = b.buf[:0]
+	b.BufLen = len(b.Buf)
+	b.Buf = b.Buf[:0]
 	return nil
 }

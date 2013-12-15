@@ -29,31 +29,13 @@ type game struct {
 
 var g game
 
-const vertShaderSrcDef = `
-	uniform vec2 offset;
-    uniform mat4 mvp;
-	attribute vec4 vPosition;
-
-	void main() {
-		gl_Position = mvp * vec4(vPosition.xy+offset, vPosition.zw);
-	}
-`
-
-const fragShaderSrcDef = `
-	precision mediump float;
-
-	uniform vec3 color;
-
-	void main() {
-		gl_FragColor = vec4(color.xyz, 1.0);
-	}
-`
+var _ = engine.CALIBRATE_MS
 
 func main() {
 	runtime.GOMAXPROCS(2)
 	g.updater = newUpdater()
 	go g.updater.fetchUpdates()
-	go engine.Loop(g.updater)
+	//go engine.Loop(g.updater)
 }
 
 //func updateCurrentBuffer(verts []C.GLfloat) {
@@ -71,7 +53,7 @@ func (game *game) resize(width, height int) {
 	//game.offsetY = float32(height-Y_COUNT*STEP) / 2.0
 
 	gl.MakeProjectionMatrix(0, float32(width)-1, 0, float32(height)-1, 1.0, -1.0, game.mvp)
-	gl.GlViewport(0, 0, width, height)
+	//gl.GlViewport(0, 0, width, height)
 
 	game.currentScreen.HandleResize(width, height)
 }
@@ -135,10 +117,13 @@ func (g *game) Init(w, h int) {
 
 	bottomRect := ui.SimpleRect{0, 0, fw, bottompad}
 
-	g.fieldScreen = ui.NewGameScreen(g, bottomRect)
+	g.fieldScreen = ui.NewFieldScreen(g, bottomRect)
+	g.fieldScreen.Init(w, h)
 	//g.presetScreen = newPresetScreen(float32(fw * 2), 0, bottomRect)
 	g.presetScreen = ui.NewPresetScreen(g, bottomRect)
+	g.presetScreen.Init(w, h)
 
+	g.updater.AttachField(g.fieldScreen.F)
 	g.Switch(ui.ID_FIELD_SCREEN)
 	log.Println("screen: now game")
 }

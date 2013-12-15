@@ -12,6 +12,7 @@ package gl
 import "C"
 
 import (
+	"log"
 	"unsafe"
 )
 
@@ -44,6 +45,7 @@ func GlBindBuffer(buf uint, mode uint) error {
 }
 
 func GlBufferData(glType uint, verts []float32, glMode uint) error {
+	log.Printf("gl: loading %d vertices into %d", len(verts), glType)
 	C.glBufferData(C.GLenum(glType),
 		C.GLsizeiptr(len(verts)*int(unsafe.Sizeof(verts[0]))),
 		unsafe.Pointer(&verts[0]), C.GLenum(glMode))
@@ -89,6 +91,9 @@ func GlGetProgramiv(handle uint, flag uint) (int, error) {
 
 func GlGetProgramInfoLog(prog uint) (string, error) {
 	logLen, _ := GlGetProgramiv(prog, INFO_LOG_LENGTH)
+	if logLen == 0 {
+		return "", nil
+	}
 	buf := make([]byte, logLen)
 	C.glGetProgramInfoLog(C.GLuint(prog), C.GLsizei(logLen), (*C.GLsizei)(unsafe.Pointer(&logLen)),
 		(*C.GLchar)(unsafe.Pointer(&buf[0])))
@@ -109,6 +114,7 @@ func GlShaderSource(handle uint, sources []string) error {
 		sourcesC[idx] = (*C.GLchar)(unsafe.Pointer(&byteSrc[0]))
 		sourceLengths[idx] = C.GLint(len(byteSrc))
 	}
+	log.Println("gl: loading shader into handle", handle, "count is", len(sources))
 	C.glShaderSource(C.GLuint(handle), C.GLsizei(len(sources)),
 		(**C.GLchar)(unsafe.Pointer(&sourcesC[0])), (*C.GLint)(unsafe.Pointer(&sourceLengths[0])))
 	return nil
@@ -116,6 +122,7 @@ func GlShaderSource(handle uint, sources []string) error {
 
 func GlCreateShader(shType uint) (uint, error) {
 	handle := C.glCreateShader(C.GLenum(shType))
+	log.Println("gl: created shader", handle)
 	return uint(handle), nil
 }
 
@@ -154,7 +161,7 @@ func GlGetAttribLocation(prog uint, name string) (int, error) {
 func GlGetUniformLocation(prog uint, name string) (int, error) {
 	nameC := C.CString(name)
 	defer C.free(unsafe.Pointer(nameC))
-	attrib := int(C.glGetAttribLocation(C.GLuint(prog), (*C.GLchar)(unsafe.Pointer(nameC))))
+	attrib := int(C.glGetUniformLocation(C.GLuint(prog), (*C.GLchar)(unsafe.Pointer(nameC))))
 	// FIXME: check that attrib != -1
 	return attrib, nil
 }
@@ -205,5 +212,10 @@ func GlGetString(name uint) string {
 
 func GlViewport(x, y, szX, szY int) error {
 	C.glViewport(C.GLint(x), C.GLint(y), C.GLsizei(szX), C.GLsizei(szY))
+	return nil
+}
+
+func GlDrawArrays(mode uint, first, count int) error {
+	C.glDrawArrays(C.GLenum(mode), C.GLint(first), C.GLsizei(count))
 	return nil
 }

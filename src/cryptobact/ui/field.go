@@ -197,20 +197,20 @@ func (f *Field) FlushAll() {
 
 func (f *Field) UpdateBact(cx, cy float32, angle float32, color [3]byte) {
 	// update body
-	bactbuf := renderObject(mainSet[ID_BACTERIA_BODY].verts,
-		cx, cy, gl.PackColor([3]byte{255, 100, 0}))
+	bactbuf := renderRotatedObject(mainSet[ID_BACTERIA_BODY].verts,
+		cx, cy, angle, gl.PackColor([3]byte{255, 100, 0}))
 
 	//bactbuf = renderObject(mainSet[ID_BACTERIA_BODY].verts, fticks, 10)
-	eyebuf := renderObject(mainSet[ID_BACTERIA_EYES].verts,
-		cx, cy, gl.PackColor([3]byte{0, 0, 0}))
+	eyebuf := renderRotatedObject(mainSet[ID_BACTERIA_EYES].verts,
+		cx, cy, angle, gl.PackColor([3]byte{0, 0, 0}))
 	f.buffers[ID_BACTERIA_BODY].Append(eyebuf)
 
-	eyebuf = renderObject(mainSet[ID_BACTERIA_EYE_SHINE].verts,
-		cx, cy, gl.PackColor([3]byte{255, 255, 255}))
+	eyebuf = renderRotatedObject(mainSet[ID_BACTERIA_EYE_SHINE].verts,
+		cx, cy, angle, gl.PackColor([3]byte{255, 255, 255}))
 	f.buffers[ID_BACTERIA_BODY].Append(eyebuf)
 
-	eyebuf = renderObject(mainSet[ID_BACTERIA_EYE_STARK].verts,
-		cx, cy, gl.PackColor([3]byte{0, 0, 255}))
+	eyebuf = renderRotatedObject(mainSet[ID_BACTERIA_EYE_STARK].verts,
+		cx, cy, angle, gl.PackColor([3]byte{0, 0, 255}))
 	f.buffers[ID_BACTERIA_BODY].Append(eyebuf)
 	f.buffers[ID_BACTERIA_BODY].Append(bactbuf)
 }
@@ -251,6 +251,25 @@ func renderObject(pattern []float32, cx, cy float32, other ...float32) []float32
 	return vexs
 }
 
+func renderRotatedObject(pattern []float32, cx, cy, angle float32, other ...float32) []float32 {
+	vexs := make([]float32, len(pattern)+len(pattern)/2*len(other))
+	//log.Println("render: coords are", cx, cy)
+	step := len(other) + 2
+	var pidx int
+	angle = (angle + 90)* math.Pi / 180
+	sin := float32(math.Sin(float64(angle)))
+	cos := float32(math.Cos(float64(angle)))
+	for idx := 0; idx < len(vexs); idx += step {
+		lx := pattern[pidx] * 3
+		ly := pattern[pidx+1] * 3
+		vexs[idx] = cx*STEP + lx*cos - ly*sin
+		vexs[idx+1] = cy*STEP + lx*sin + ly*cos
+		copy(vexs[idx+2:], other)
+		pidx += 2
+	}
+	//log.Println("render: resulting coord set is", vexs)
+	return vexs
+}
 func makeGridPoints(limX, limY, step float32) []float32 {
 	data := make([]float32, 0, int(math.Ceil(float64(limX)*float64(limY)/(float64(step)*float64(step))+4)*4))
 

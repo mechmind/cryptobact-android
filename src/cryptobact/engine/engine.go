@@ -267,14 +267,21 @@ func cacheAction(w *World, b *evo.Bacteria, a Action) {
 }
 
 func getCachedAction(w *World, b *evo.Bacteria) Action {
+	inertia := false
+	if dist(0, 0, b.Inertia.X, b.Inertia.Y) > 1e-5 {
+		inertia = true
+	}
 	for k, c := range w.ActionCache {
 		if c.B == b {
-			if c.TTL <= 1 {
+			if c.TTL <= 1 || inertia {
 				if k+1 >= len(w.ActionCache) {
 					w.ActionCache = w.ActionCache[:k]
 				} else {
 					w.ActionCache = append(w.ActionCache[:k], w.ActionCache[k+1:]...)
 				}
+			}
+			if inertia {
+				return nil
 			}
 			c.TTL -= 1
 			return c.Action

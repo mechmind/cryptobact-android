@@ -67,12 +67,12 @@ func (a *ActionMove) Apply() {
 		b.Angle -= b.GetRotation()
 
 		if b.Angle < 0 {
-			b.Angle += 360
+			b.Angle = 360
 		}
 	} else {
 		b.Angle += b.GetRotation()
 		if b.Angle > 359 {
-			b.Angle -= 360
+			b.Angle = 0
 		}
 	}
 

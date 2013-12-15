@@ -133,7 +133,7 @@ func Loop(updater Updater) {
 
 		tPopulationTotal := time.Now()
 		for _, population := range world.Populations {
-			if world.Notch(1000) {
+			if world.Notch(1) {
 				log.Println(population)
 			}
 

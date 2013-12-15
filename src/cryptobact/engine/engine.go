@@ -258,7 +258,7 @@ func cacheAction(w *World, b *evo.Bacteria, a Action) {
 	for _, c := range w.ActionCache {
 		if c.B == b {
 			c.Action = a
-			c.Ttl = ttl
+			c.TTL = ttl
 			return
 		}
 	}
@@ -269,13 +269,14 @@ func cacheAction(w *World, b *evo.Bacteria, a Action) {
 func getCachedAction(w *World, b *evo.Bacteria) Action {
 	for k, c := range w.ActionCache {
 		if c.B == b {
-			if c.Ttl <= 1 {
+			if c.TTL <= 1 {
 				if k+1 >= len(w.ActionCache) {
 					w.ActionCache = w.ActionCache[:k]
 				} else {
 					w.ActionCache = append(w.ActionCache[:k], w.ActionCache[k+1:]...)
 				}
 			}
+			c.TTL -= 1
 			return c.Action
 		}
 	}

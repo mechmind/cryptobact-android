@@ -34,7 +34,7 @@ type World struct {
 type ActionCache struct {
 	B      *evo.Bacteria
 	Action Action
-	Ttl    int
+	TTL    int
 }
 
 func NewWorld() *World {

@@ -19,7 +19,7 @@ const (
 	WIDTH  = 16
 	HEIGHT = 24
 
-	FOOD_TICKS    = 300
+	FOOD_TICKS    = 250
 	FOOD_PER_TICK = 10
 
 	MINER_BASE_DIFF = 146
@@ -191,7 +191,7 @@ func EstimateTPS(smallTick int, startTime time.Time, TPSAvg *[]int) int {
 }
 
 func SimulatePopulation(world *World, population *evo.Population) {
-	t := time.Now()
+	//t := time.Now()
 	for _, bact := range population.Bacts {
 		a := GetAction(population, bact, world)
 		if a != nil {
@@ -200,7 +200,7 @@ func SimulatePopulation(world *World, population *evo.Population) {
 
 		//log.Println(a)
 	}
-	log.Println(time.Since(t))
+	//log.Println(time.Since(t))
 
 	world.GetOld(population)
 	world.ApplyAcid(population)

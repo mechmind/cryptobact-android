@@ -254,6 +254,14 @@ func (b *Bacteria) GetMoveEnergy() float64 {
 	return result
 }
 
+func (b *Bacteria) GetColor() []byte {
+	return []byte{
+		byte(255.0 * b.Chromosome.DNA.GetNormGene(0)),
+		byte(255.0 * b.Chromosome.DNA.GetNormGene(1)),
+		byte(255.0 * b.Chromosome.DNA.GetNormGene(2)),
+	}
+}
+
 func (b *Bacteria) Clone() *Bacteria {
 	newBacteria := *b
 	// Chromosome intentionaly left same

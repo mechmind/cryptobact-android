@@ -338,6 +338,7 @@ func cacheAction(w *World, b *evo.Bacteria, a Action) {
 }
 
 func getCachedAction(w *World, b *evo.Bacteria) Action {
+	return nil
 	inertia := false
 	if dist(0, 0, b.Inertia.X, b.Inertia.Y) > 1e-5 {
 		inertia = true

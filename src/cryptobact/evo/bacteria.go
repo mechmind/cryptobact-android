@@ -7,7 +7,7 @@ const (
 	B_BASE_ENERGY            = 200    // energy points at birth
 	B_BASE_TTL               = 4000   // time to live in ticks
 	B_BASE_SPEED             = 0.7    // speed in pixels per tick
-	B_BASE_ROTATION          = 1.5    // rotation speed in degrees per tick
+	B_BASE_ROTATION          = 0.5    // rotation speed in degrees per tick
 	B_BASE_METABOLISM        = 0.75   // which part of eaten food becomes an energy
 	B_BASE_CLOT_RESIST       = 0.5    // clot resistance {0..1}
 	B_BASE_ACID_RESIST       = 0.5    // acid resistance {0..1}
@@ -20,9 +20,9 @@ const (
 	B_BASE_MOVE_ENERGY       = 0.001  // energy spent to move
 	B_BASE_PROCR_ENERGY      = 0.0001 // energy wiped while procrastinate (per tick)
 	B_BASE_EAT_DIST          = 0.05   // maximum eat distance
-	B_BASE_FUCK_DIST         = 1.2    // maximum fuck distance
-	B_BASE_ATTACK_DIST       = 2.0    // maximum attack distance
-	B_BASE_COLLISION_DIST    = 0.8    // collision detection radius
+	B_BASE_FUCK_DIST         = 7.0    // maximum fuck distance
+	B_BASE_ATTACK_DIST       = 7.0    // maximum attack distance
+	B_BASE_COLLISION_DIST    = 5    // collision detection radius
 	B_BASE_COLLISION_SPEED   = 0.1    // speed after colision
 	B_BASE_COLLISION_INERTIA = 0.8    // speed after colision
 	B_BASE_HYSTERIA          = 0.02   // speed after colision

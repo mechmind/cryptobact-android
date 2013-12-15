@@ -226,8 +226,7 @@ func (f *Field) UpdateBact(cx, cy float32, angle float32, color [3]byte) {
 func (f *Field) UpdateEgg(cx, cy float32, color [3]byte) {
 	colorf := gl.PackColor(color)
 	// update body
-	data := renderObject(mainSet[ID_EGG].verts, cx, cy, colorf)
-	log.Println("field: egg data", len(data), ">>>>", len(mainSet[ID_EGG].verts), ">>>>", data)
+	data := renderObject(mainSet[ID_BACTERIA_BODY].verts, cx, cy, colorf)
 	f.buffers[ID_EGG].Append(data)
 }
 
@@ -251,8 +250,8 @@ func renderObject(pattern []float32, cx, cy float32, other ...float32) []float32
 	step := len(other) + 2
 	var pidx int
 	for idx := 0; idx < len(vexs); idx += step {
-		vexs[idx] = cx*STEP + pattern[pidx]*3
-		vexs[idx+1] = cy*STEP + pattern[pidx+1]*3
+		vexs[idx] = cx*STEP + pattern[pidx]*7.5
+		vexs[idx+1] = cy*STEP + pattern[pidx+1]*7.5
 		copy(vexs[idx+2:], other)
 		pidx += 2
 	}
@@ -269,8 +268,8 @@ func renderRotatedObject(pattern []float32, cx, cy, angle float32, other ...floa
 	sin := float32(math.Sin(float64(angle)))
 	cos := float32(math.Cos(float64(angle)))
 	for idx := 0; idx < len(vexs); idx += step {
-		lx := pattern[pidx] * 3
-		ly := pattern[pidx+1] * 3
+		lx := pattern[pidx] * 7.5
+		ly := pattern[pidx+1] * 7.5
 		vexs[idx] = cx*STEP + lx*cos - ly*sin
 		vexs[idx+1] = cy*STEP + lx*sin + ly*cos
 		copy(vexs[idx+2:], other)

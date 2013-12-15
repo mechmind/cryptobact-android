@@ -39,9 +39,9 @@ func (r *Updater) AttachField(f *ui.Field) {
 func (r *Updater) Update(w *engine.World) {
 	select {
 	case <-r.done:
-		req := &updateRequest{w.Snapshot(), make(chan struct{})}
+		//time.Sleep(time.Second / 5)
+		req := &updateRequest{w.Snapshot(), nil}
 		r.reqs <- req
-		r.done = req.done
 	default:
 	}
 }
@@ -54,7 +54,7 @@ func (r *Updater) fetchUpdates() {
 			//log.Println("handling world update")
 			if r.field == nil {
 				// discard update silently
-				req.done <- struct{}{}
+				r.done <- struct{}{}
 			} else {
 				r.handleUpdate(req.w)
 				// send ping to main render loop
@@ -62,10 +62,39 @@ func (r *Updater) fetchUpdates() {
 				r.updateReady <- status
 				<-status
 				// send ok to engine
-				req.done <- struct{}{}
+				r.done <- struct{}{}
 			}
 		}
 	}
+}
+
+type bactinfo struct{ x, y float32 }
+
+var lastlist []bactinfo
+var thresh float32 = 5.0
+
+func abs(v1, v2 float32) float32 {
+	d := v1 - v2
+	if d < 0 {
+		return -d
+	}
+	return d
+}
+
+func logdiff(b []bactinfo) {
+	if len(b) != len(lastlist) {
+		lastlist = b
+		return
+	}
+	for idx, i := range b {
+		ii := lastlist[idx]
+		if abs(ii.x, i.x) > thresh || abs(ii.y, i.y) > thresh {
+			log.Println("updater: found teleport at ", idx, ":", ii, i)
+			log.Println("updater: all of new them", b)
+			log.Println("updater: all of old them", lastlist)
+		}
+	}
+	lastlist = b
 }
 
 func (r *Updater) handleUpdate(w *engine.World) {
@@ -80,6 +109,7 @@ func (r *Updater) handleUpdate(w *engine.World) {
 	//log.Println("handled", foodCount, "food")
 
 	var bactCount int
+	var bacts []bactinfo
 	for _, p := range w.Populations {
 		for _, b := range p.Bacts {
 			if b != nil {
@@ -87,12 +117,14 @@ func (r *Updater) handleUpdate(w *engine.World) {
 					r.field.UpdateBact(float32(b.X), float32(b.Y), float32(b.Angle),
 						b.GetColor())
 					bactCount++
+					bacts = append(bacts, bactinfo{float32(b.X), float32(b.Y)})
 				} else {
 					r.field.UpdateEgg(float32(b.X), float32(b.Y), b.GetColor())
 				}
 			}
 		}
 	}
+	//log.Println("updater: all bacts", bacts)
 }
 
 func (r *Updater) IsWorldUpdated() chan struct{} {

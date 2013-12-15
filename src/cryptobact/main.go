@@ -35,7 +35,7 @@ func main() {
 	runtime.GOMAXPROCS(2)
 	g.updater = newUpdater()
 	go g.updater.fetchUpdates()
-go engine.Loop(g.updater)
+	go engine.Loop(g.updater)
 }
 
 //func updateCurrentBuffer(verts []C.GLfloat) {

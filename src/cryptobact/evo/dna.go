@@ -2,25 +2,30 @@ package evo
 
 import (
 	"fmt"
+	"log"
 	"math"
 	"math/big"
 	"math/rand"
 	"strings"
 )
 
+var _ = log.Println
+
 type DNA struct {
 	Length  int
 	GenePos []uint
 	Seq     *big.Int
+	genes   []uint
 }
 
 const GENE_SLICER_SEED = 0xDEADBEEE
 const GENE_MAX_LENGTH = 8
+const GENE_MAX_VAL = 256.0
 
 var GeneSlicer = rand.New(rand.NewSource(0))
 
 func NewEmptyDNA() *DNA {
-	return &DNA{0, make([]uint, 0), big.NewInt(0)}
+	return &DNA{0, make([]uint, 0), big.NewInt(0), make([]uint, 0)}
 }
 
 func NewRandDNA(length int) *DNA {
@@ -44,8 +49,8 @@ func NewRandDNA(length int) *DNA {
 }
 
 func Crossover(a *DNA, b *DNA) *DNA {
-	a_genes := a.Genes()
-	b_genes := b.Genes()
+	a_genes := a.genes
+	b_genes := b.genes
 
 	new_dna := NewEmptyDNA()
 
@@ -77,6 +82,7 @@ func Crossover(a *DNA, b *DNA) *DNA {
 	}
 
 	new_dna.Seq = new_genome
+	new_dna.genes = new_dna.Genes()
 
 	return new_dna
 }
@@ -138,6 +144,10 @@ func (dna *DNA) Recombine(pattern string) {
 }
 
 func (dna *DNA) Genes() []uint {
+	if len(dna.genes) > 0 {
+		return dna.genes
+	}
+
 	genes := make([]uint, 0)
 	genome := big.NewInt(0)
 	gene := big.NewInt(0)
@@ -152,13 +162,15 @@ func (dna *DNA) Genes() []uint {
 		genes = append(genes, uint(gene.Uint64()))
 		genome.Rsh(genome, uint(dna.GenePos[i]))
 	}
+
+	dna.genes = genes
+
 	return genes
 }
 
 func (dna *DNA) GetNormGene(index int) float64 {
-	genes := dna.Genes()
-	return float64(genes[int(index)%len(genes)]) /
-		float64(1<<GENE_MAX_LENGTH)
+	dna_genes := dna.Genes()
+	return float64(dna_genes[int(index)%len(dna_genes)]) / GENE_MAX_VAL
 }
 
 func (dna *DNA) MatchPatternCount(pattern string) int {
@@ -201,9 +213,9 @@ func (d *DNA) Diff(d2 *DNA) int {
 
 func (dna *DNA) String() string {
 	gene_strs := make([]string, 0)
-	genes := dna.Genes()
-	for i := len(genes) - 1; i >= 0; i-- {
-		gene := genes[i]
+	dna_genes := dna.Genes()
+	for i := len(dna_genes) - 1; i >= 0; i-- {
+		gene := dna_genes[i]
 		gene_strs = append(gene_strs,
 			fmt.Sprintf(fmt.Sprintf("%%0%db", dna.GenePos[i]), gene))
 	}

@@ -135,7 +135,7 @@ func (w *World) ApplyAcid(population *evo.Population) {
 		resist := b.GetAcidResist()
 		damage := 0.0
 		for _, a := range w.Acid {
-			dist := dist(a.X, a.Y, b.X, b.Y)
+			dist := distNoSqrt(a.X, a.Y, b.X, b.Y)
 			damage += (a.Con - a.Con*resist) / (dist + 0.001)
 		}
 		b.Energy = math.Max(0, b.Energy-damage)
@@ -144,16 +144,21 @@ func (w *World) ApplyAcid(population *evo.Population) {
 
 // returns nearest food
 func (w *World) GetNearestFood(b *evo.Bacteria) *Food {
+	eat_dist := b.GetEatDist()
 	min_dist := math.Inf(0)
 	var result *Food
 	for _, f := range w.Food {
 		if f.Eaten {
 			continue
 		}
-		dist := dist(b.X, b.Y, f.X, f.Y)
+		dist := distNoSqrt(b.X, b.Y, f.X, f.Y)
 		if dist < min_dist {
 			min_dist = dist
 			result = f
+
+			if dist <= eat_dist {
+				break
+			}
 		}
 	}
 	return result
@@ -164,7 +169,7 @@ func (w *World) GetNearestAcid(b *evo.Bacteria) *Acid {
 	min_dist := math.Inf(0)
 	var result *Acid
 	for _, a := range w.Acid {
-		dist := dist(b.X, b.Y, a.X, a.Y)
+		dist := distNoSqrt(b.X, b.Y, a.X, a.Y)
 		if dist < min_dist {
 			min_dist = dist
 			result = a
@@ -175,6 +180,7 @@ func (w *World) GetNearestAcid(b *evo.Bacteria) *Acid {
 
 // returns the nearest enemy bacteria
 func (w *World) GetNearestEnemy(b *evo.Bacteria) *evo.Bacteria {
+	atk_dist := b.GetAttackDist()
 	min_dist := math.Inf(0)
 	var result *evo.Bacteria
 	for _, p := range w.Populations {
@@ -183,10 +189,14 @@ func (w *World) GetNearestEnemy(b *evo.Bacteria) *evo.Bacteria {
 			if f.Chromosome.Author == b.Chromosome.Author {
 				continue outerLoop
 			}
-			dist := dist(b.X, b.Y, f.X, f.Y)
+			dist := distNoSqrt(b.X, b.Y, f.X, f.Y)
 			if dist < min_dist {
 				min_dist = dist
 				result = f
+
+				if dist <= atk_dist {
+					break
+				}
 			}
 		}
 	}
@@ -195,6 +205,7 @@ func (w *World) GetNearestEnemy(b *evo.Bacteria) *evo.Bacteria {
 
 // returns the nearest fellow bacteria
 func (w *World) GetNearestFellow(b *evo.Bacteria) *evo.Bacteria {
+	fuk_dist := b.GetFuckDist()
 	min_dist := math.Inf(0)
 	var result *evo.Bacteria
 	for _, p := range w.Populations {
@@ -209,10 +220,14 @@ func (w *World) GetNearestFellow(b *evo.Bacteria) *evo.Bacteria {
 			if !f.Born {
 				continue
 			}
-			dist := dist(b.X, b.Y, f.X, f.Y)
+			dist := distNoSqrt(b.X, b.Y, f.X, f.Y)
 			if dist < min_dist {
 				min_dist = dist
 				result = f
+
+				if dist <= fuk_dist {
+					break
+				}
 			}
 		}
 	}
@@ -221,6 +236,7 @@ func (w *World) GetNearestFellow(b *evo.Bacteria) *evo.Bacteria {
 
 // returns the nearest fellow bacteria
 func (w *World) GetNearestBact(b *evo.Bacteria) *evo.Bacteria {
+	col_dist := b.GetCollisionDist()
 	min_dist := math.Inf(0)
 	var result *evo.Bacteria
 	for _, p := range w.Populations {
@@ -228,10 +244,14 @@ func (w *World) GetNearestBact(b *evo.Bacteria) *evo.Bacteria {
 			if f == b {
 				continue
 			}
-			dist := dist(b.X, b.Y, f.X, f.Y)
+			dist := distNoSqrt(b.X, b.Y, f.X, f.Y)
 			if dist < min_dist {
 				min_dist = dist
 				result = f
+
+				if dist <= col_dist {
+					return result
+				}
 			}
 		}
 	}
@@ -241,6 +261,11 @@ func (w *World) GetNearestBact(b *evo.Bacteria) *evo.Bacteria {
 // returns distance between two points
 func dist(x1 float64, y1 float64, x2 float64, y2 float64) float64 {
 	return math.Sqrt(math.Pow(x2-x1, 2) + math.Pow(y2-y1, 2))
+}
+
+// returns distance between two points
+func distNoSqrt(x1 float64, y1 float64, x2 float64, y2 float64) float64 {
+	return math.Pow(x2-x1, 2) + math.Pow(y2-y1, 2)
 }
 
 func (w *World) Snapshot() *World {

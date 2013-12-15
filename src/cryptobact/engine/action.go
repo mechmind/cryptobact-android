@@ -2,9 +2,15 @@ package engine
 
 import (
 	"cryptobact/evo"
+
+	"log"
 	"math"
 	"math/rand"
+	"time"
 )
+
+var _ = log.Println
+var _ = time.Now
 
 type Decision struct {
 	Weight float64
@@ -149,7 +155,7 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 	// detect collision and set inertion vector if required
 	n_bact := w.GetNearestBact(b)
 	if n_bact != nil {
-		n_dist := dist(b.X, b.Y, n_bact.X, n_bact.Y)
+		n_dist := distNoSqrt(b.X, b.Y, n_bact.X, n_bact.Y)
 		if n_dist < b.GetCollisionDist() {
 			//ix, iy := getRunawayPoint(b, n_bact.X, n_bact.Y)
 			elastic := 1.0
@@ -183,7 +189,7 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 	}
 
 	if n_fellow := w.GetNearestFellow(b); b.CanFuck() && n_fellow != nil {
-		fellow_dist := dist(n_fellow.X, n_fellow.Y, b.X, b.Y)
+		fellow_dist := distNoSqrt(n_fellow.X, n_fellow.Y, b.X, b.Y)
 		weight := b.GetLust() / fellow_dist
 		if weight > max_weight {
 			max_weight = weight
@@ -196,7 +202,7 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 	}
 
 	if n_enemy := w.GetNearestEnemy(b); n_enemy != nil {
-		enemy_dist := dist(n_enemy.X, n_enemy.Y, b.X, b.Y)
+		enemy_dist := distNoSqrt(n_enemy.X, n_enemy.Y, b.X, b.Y)
 		weight := b.GetAggression() / enemy_dist
 		if weight > max_weight {
 			max_weight = weight
@@ -209,7 +215,7 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 	}
 
 	if n_acid := w.GetNearestAcid(b); n_acid != nil {
-		acid_dist := dist(n_acid.X, n_acid.Y, b.X, b.Y)
+		acid_dist := distNoSqrt(n_acid.X, n_acid.Y, b.X, b.Y)
 		weight := 1 / (b.GetAcidResist() * acid_dist)
 		if weight > max_weight {
 			max_weight = weight

@@ -19,7 +19,7 @@ const (
 	WIDTH  = 16
 	HEIGHT = 24
 
-	FOOD_TICKS    = 250
+	FOOD_TICKS    = 100
 	FOOD_PER_TICK = 10
 
 	MINER_BASE_DIFF = 146
@@ -98,23 +98,56 @@ func Loop(updater Updater) {
 	estTPSAvg := make([]int, TPS_WINDOW_SIZE)
 	realTPSAvg := make([]int, TPS_WINDOW_SIZE)
 	targetTPS := TARGET_TPS
-	for {
-		startTime := time.Now()
 
+	//eTotal := int64(0)
+	//eSpawnFood := int64(0)
+	//ePopulationTotal := int0
+	//ePopulationSpread := 0
+	//eCounter := 0
+	//
+
+	var (
+		eCounter          int64 = 0
+		eTotal            int64 = 0
+		eSpawnFood        int64 = 0
+		ePopulationTotal  int64 = 0
+		ePopulationSpread int64 = 0
+		eCleanFood        int64 = 0
+		eUpdater          int64 = 0
+		eSimulate         int64 = 0
+		eNewbornProcess   int64 = 0
+		eCatch            int64 = 0
+		eCalibration      int64 = 0
+	)
+
+	for {
+		eCounter += 1
+		tTotal := time.Now()
+		//startTime := time.Now()
+
+		tSpawnFood := time.Now()
 		world.SpawnFood()
+		eSpawnFood += time.Since(tSpawnFood).Nanoseconds()
 
 		newborn := miner.GetMined()
 
+		tPopulationTotal := time.Now()
 		for _, population := range world.Populations {
 			if world.Notch(1000) {
 				log.Println(population)
 			}
 
 			if world.Notch(110) {
+				tPopulationSpread := time.Now()
 				infektor.Spread(population)
+				ePopulationSpread += time.Since(tPopulationSpread).Nanoseconds()
 			}
 
+			tSimulate := time.Now()
 			SimulatePopulation(world, population)
+			eSimulate += time.Since(tSimulate).Nanoseconds()
+
+			tNewbornProcess := time.Now()
 			if newborn != nil && newborn.Author == population.Chain.Author {
 				for _, b := range population.Bacts {
 					if b.Chromosome == newborn {
@@ -123,13 +156,20 @@ func Loop(updater Updater) {
 					}
 				}
 			}
+			eNewbornProcess += time.Since(tNewbornProcess).Nanoseconds()
 		}
+		ePopulationTotal += time.Since(tPopulationTotal).Nanoseconds()
 
+		tCleanFood := time.Now()
 		world.CleanFood()
+		eCleanFood += time.Since(tCleanFood).Nanoseconds()
 
+		tUpdater := time.Now()
 		updater.Update(world)
+		eUpdater += time.Since(tUpdater).Nanoseconds()
 
 		if world.Notch(100) {
+			tCatch := time.Now()
 			infection := infektor.Catch()
 			if infection != nil {
 				exists := false
@@ -148,16 +188,21 @@ func Loop(updater Updater) {
 					world.Populations = append(world.Populations, infection)
 				}
 			}
+			eCatch += time.Since(tCatch).Nanoseconds()
 		}
 
 		world.Step()
 
-		maxTPS := EstimateTPS(world.GetSmallTick(), startTime, &estTPSAvg)
+		eTotal += time.Since(tTotal).Nanoseconds()
+
+		tCalibration := time.Now()
+		maxTPS := EstimateTPS(world.GetSmallTick(), tTotal, &estTPSAvg)
 
 		CalibrateTPS(maxTPS, targetTPS)
 		CalibrateMiner(miner)
 
-		realTPS := EstimateTPS(world.GetSmallTick(), startTime, &realTPSAvg)
+		realTPS := EstimateTPS(world.GetSmallTick(), tTotal, &realTPSAvg)
+		eCalibration += time.Since(tCalibration).Nanoseconds()
 
 		if world.Notch(500) {
 			log.Printf("current miner hash rate is %.3f kh/s\n",
@@ -169,6 +214,32 @@ func Loop(updater Updater) {
 					i,
 					len(p.Bacts))
 			}
+
+			log.Printf("aggregated profile for %d ticks", eCounter)
+
+			lCounter := float64(eCounter) * 1.0e9
+			log.Printf("total time       : %.4f", float64(eTotal)/lCounter)
+			log.Printf("spawn food       : %.4f", float64(eSpawnFood)/lCounter)
+			log.Printf("population total : %.4f", float64(ePopulationTotal)/lCounter)
+			log.Printf("update world     : %.4f", float64(eUpdater)/lCounter)
+			log.Printf("clean food       : %.4f", float64(eCleanFood)/lCounter)
+			log.Printf("population spread: %.4f", float64(ePopulationSpread)/lCounter)
+			log.Printf("simulate         : %.4f", float64(eSimulate)/lCounter)
+			log.Printf("newborn process  : %.4f", float64(eNewbornProcess)/lCounter)
+			log.Printf("catch            : %.4f", float64(eCatch)/lCounter)
+			log.Printf("calibration      : %.4f", float64(eCalibration)/lCounter)
+
+			eCounter = 0
+			eTotal = 0
+			eSpawnFood = 0
+			ePopulationTotal = 0
+			eUpdater = 0
+			eCleanFood = 0
+			ePopulationSpread = 0
+			eSimulate = 0
+			eNewbornProcess = 0
+			eCatch = 0
+			eCalibration = 0
 		}
 	}
 }

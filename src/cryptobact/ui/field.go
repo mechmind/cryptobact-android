@@ -154,6 +154,8 @@ func (f *Field) Init(mvp []float32) error {
 	f.buffers[ID_BACTERIA_BODY].Binder = gl.ShaderBinder(bactBinder)
 	f.buffers[ID_BACTERIA_EYES].Binder = gl.ShaderBinder(bactBinder)
 
+	f.buffers[ID_EGG].Binder = gl.ShaderBinder(bactBinder)
+
 	// temporary bacteria body
 	//	gl.GlUniformMatrix4fv(f.smvp, 1, false, mvp)
 	return nil
@@ -184,6 +186,13 @@ func (f *Field) Draw(mvp []float32) {
 	b = f.buffers[ID_BACTERIA_BODY]
 	gl.GlBindBuffer(gl.ARRAY_BUFFER, b.GlBuffer)
 	f.buffers[ID_BACTERIA_BODY].Binder(f.buffers[ID_BACTERIA_BODY])
+
+	gl.GlUniform2f(f.soffset, f.offx, f.offy)
+	gl.GlDrawArrays(gl.TRIANGLES, 0, b.BufLen)
+
+	b = f.buffers[ID_EGG]
+	gl.GlBindBuffer(gl.ARRAY_BUFFER, b.GlBuffer)
+	f.buffers[ID_EGG].Binder(f.buffers[ID_EGG])
 
 	gl.GlUniform2f(f.soffset, f.offx, f.offy)
 	gl.GlDrawArrays(gl.TRIANGLES, 0, b.BufLen)
@@ -218,6 +227,7 @@ func (f *Field) UpdateEgg(cx, cy float32, color [3]byte) {
 	colorf := gl.PackColor(color)
 	// update body
 	data := renderObject(mainSet[ID_EGG].verts, cx, cy, colorf)
+	log.Println("field: egg data", len(data), ">>>>", len(mainSet[ID_EGG].verts), ">>>>", data)
 	f.buffers[ID_EGG].Append(data)
 }
 

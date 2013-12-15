@@ -16,8 +16,8 @@ const (
 
 const (
 	STEP    = 25.0 // FIXME: unconst all
-	X_COUNT = 16
-	Y_COUNT = 24
+	X_COUNT = 48
+	Y_COUNT = 60
 )
 
 type UInteractive interface {
@@ -145,7 +145,7 @@ func (fs *FieldScreen) HandleDraw() {
 	//	// world
 	if status := fs.u.IsWorldUpdated(); status != nil {
 		// apply bb to render
-		log.Println("applying new map")
+		//log.Println("applying new map")
 		fs.F.FlushAll()
 		status <- struct{}{}
 	}

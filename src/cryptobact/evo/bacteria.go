@@ -7,7 +7,7 @@ const (
 	B_BASE_ENERGY            = 200    // energy points at birth
 	B_BASE_TTL               = 4000   // time to live in ticks
 	B_BASE_SPEED             = 0.7    // speed in pixels per tick
-	B_BASE_ROTATION          = 0.5    // rotation speed in degrees per tick
+	B_BASE_ROTATION          = 1.5    // rotation speed in degrees per tick
 	B_BASE_METABOLISM        = 0.75   // which part of eaten food becomes an energy
 	B_BASE_CLOT_RESIST       = 0.5    // clot resistance {0..1}
 	B_BASE_ACID_RESIST       = 0.5    // acid resistance {0..1}

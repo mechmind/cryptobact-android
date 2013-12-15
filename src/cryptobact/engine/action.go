@@ -58,7 +58,8 @@ func (a *ActionMove) Apply() {
 		direction = "cw"
 	}
 
-	if gamma < b.GetRotation() {
+	log.Println(gamma)
+	if math.Abs(b.Angle - gamma) < b.GetRotation() {
 		b.Angle = gamma
 		return
 	}
@@ -69,11 +70,15 @@ func (a *ActionMove) Apply() {
 		if b.Angle < 0 {
 			b.Angle = 360
 		}
+
+		return
 	} else {
 		b.Angle += b.GetRotation()
 		if b.Angle > 359 {
 			b.Angle = 0
 		}
+
+		return
 	}
 
 	dx := (xt-x)/math.Abs(x-xt)*b.GetSpeed()/100.0 + b.Inertia.X*b.GetCollisionSpeed()

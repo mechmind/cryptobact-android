@@ -77,22 +77,6 @@ func (a ActionMove) Apply() {
 	b.Y += rand.NormFloat64()*b.GetHysteria() + dy
 }
 
-type ActionInert struct {
-	Bact *evo.Bacteria
-}
-
-func (a ActionInert) Apply() {
-	b := a.Bact
-	x := b.X
-	y := b.Y
-	xt := b.Inertia.X
-	yt := b.Inertia.Y
-	dx := (xt - x) / math.Abs(x-xt) * b.GetCollisionSpeed() / 100.0
-	dy := (yt - y) / math.Abs(y-yt) * b.GetCollisionSpeed() / 100.0
-	b.X += rand.NormFloat64()*0.01 + dx
-	b.Y += rand.NormFloat64()*0.01 + dy
-}
-
 type ActionAttack struct {
 	Bact   *evo.Bacteria
 	Object *evo.Bacteria
@@ -139,10 +123,6 @@ func (a ActionDie) Apply() {
 }
 
 func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
-	//if !b.Born && !b.Labouring {
-	//    return nil
-	//}
-
 	// just die if it is the time
 	if b.TTL <= 0 || b.Energy <= 0 {
 		return ActionDie{b, p}
@@ -152,7 +132,7 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 		b.Inertia = &evo.Inertia{}
 	}
 
-	//// process inertion after collision
+	// process inertion after collision
 	inertiaLen := dist(0, 0, b.Inertia.X, b.Inertia.Y)
 	if inertiaLen > 1e-5 {
 		// @TODO remove hardcode
@@ -185,14 +165,6 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 	if !b.Born {
 		return nil
 	}
-
-	// params:
-	//   aggressions {0..1}
-	//   lust {0..1}
-	//   glut {0..1}
-	// resists:
-	//   acid {0..1}
-	//   clot {0..1}
 
 	// get nearest food, fellow, enemy and acid
 	// calculate weight for every action

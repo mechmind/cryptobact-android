@@ -120,14 +120,14 @@ func (fs *FieldScreen) HandleTouch(action int, x, y float32) {
 
 	ox, oy := fs.t.Update(action, x, y)
 	if action == AMOTION_EVENT_ACTION_UP && fs.bottomRect.In(x, y) {
-		log.Println("screen: game screen throws to preset")
+		//log.Println("screen: game screen throws to preset")
 		//fs.screener.Switch(ID_PRESET_SCREEN)
 	} else if action == AMOTION_EVENT_ACTION_UP {
-		log.Println("screen: EVENT UP", x, y)
+		//log.Println("screen: EVENT UP", x, y)
 	}
 	fs.F.offx = ox
 	fs.F.offy = oy
-	log.Println("screen: offset is", ox, oy)
+	//log.Println("screen: offset is", ox, oy)
 }
 
 func (fs *FieldScreen) HandleDraw() {

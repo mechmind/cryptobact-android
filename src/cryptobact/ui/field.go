@@ -9,12 +9,19 @@ import (
 )
 
 type Field struct {
-	buffers                    []*gl.Buffer
+	buffers []*gl.Buffer
+
+	// moving field
 	vxShader, fragShader, prog uint
 	// shader props
 	position, mvp, offset, color int
 	// offset
 	offx, offy float32
+
+	// static field
+	svxShader, sfragShader, sprog uint
+	// shader props
+	sposition, smvp, soffset, scolor, bcolor int
 }
 
 func NewField() *Field {
@@ -29,7 +36,7 @@ func (f *Field) Init(mvp []float32) error {
 
 	var err error
 	// compile and link shaders
-	f.prog, err = gl.CreateProgram(bacteriaVXShader, bacteriaFragShader)
+	f.prog, err = gl.CreateProgram(gridVXShader, gridFragShader)
 	gl.ErrPanic()
 	if err != nil {
 		return err
@@ -49,30 +56,45 @@ func (f *Field) Init(mvp []float32) error {
 	// transformation matrix
 	bactBinder := func(b *gl.Buffer) error {
 		gl.GlBindBuffer(gl.ARRAY_BUFFER, b.GlBuffer)
-		gl.GlVertexAttribPointer(f.position, 2, gl.FLOAT, false, 0, 0)
+		gl.ErrPanic()
+		gl.GlUseProgram(f.sprog)
+		gl.ErrPanic()
+		//gl.GlVertexAttribPointer(f.sposition, 2, gl.FLOAT, false, 0, 0)
+		gl.GlVertexAttribPointer(f.sposition, 2, gl.FLOAT, false, 12, 0)
+		gl.ErrPanic()
+		gl.GlVertexAttribPointer(f.scolor, 4, gl.UNSIGNED_BYTE, true, 12, 8)
+		gl.ErrPanic()
 		gl.GlEnableVertexAttribArray(f.position)
-		gl.GlUniformMatrix4fv(f.mvp, 1, false, mvp)
-		gl.GlUseProgram(f.prog)
+		gl.ErrPanic()
+		gl.GlEnableVertexAttribArray(f.scolor)
+		gl.ErrPanic()
+		gl.GlUniformMatrix4fv(f.smvp, 1, false, mvp)
 		gl.ErrPanic()
 		return nil
 	}
 
 	gridBinder := func(b *gl.Buffer) error {
+		//log.Println("field: grid binder step 0")
 		gl.GlBindBuffer(gl.ARRAY_BUFFER, b.GlBuffer)
 		gl.ErrPanic()
-		gl.GlVertexAttribPointer(f.position, 2, gl.FLOAT, false, 0, 0)
-		gl.ErrPanic()
-		gl.GlEnableVertexAttribArray(f.position)
-		gl.ErrPanic()
-		gl.GlUniformMatrix4fv(f.mvp, 1, false, mvp)
-		gl.ErrPanic()
+		//log.Println("field: grid binder step 1")
 		gl.GlUseProgram(f.prog)
 		gl.ErrPanic()
+		//log.Println("field: grid binder step 2")
+		gl.GlVertexAttribPointer(f.position, 2, gl.FLOAT, false, 0, 0)
+		gl.ErrPanic()
+		//log.Println("field: grid binder step 3")
+		gl.GlEnableVertexAttribArray(f.position)
+		gl.ErrPanic()
+		//log.Println("field: grid binder step 4")
+		gl.GlUniformMatrix4fv(f.mvp, 1, false, mvp)
+		gl.ErrPanic()
+		//log.Println("field: grid binder done")
 		return nil
 	}
 	f.buffers[ID_BACTERIA_BODY].Binder = gl.ShaderBinder(bactBinder)
 	f.buffers[ID_MARKUP].Binder = gl.ShaderBinder(gridBinder)
-	gl.GlUniformMatrix4fv(f.mvp, 1, false, mvp)
+	//gl.GlUniformMatrix4fv(f.mvp, 1, false, mvp)
 	// set up grid buffer
 	f.buffers[ID_MARKUP].Append(makeGridPoints(X_COUNT*STEP, Y_COUNT*STEP, STEP))
 	f.buffers[ID_MARKUP].Flush()
@@ -87,6 +109,57 @@ func (f *Field) Init(mvp []float32) error {
 	//	gl.ErrPanic()
 	//	gl.GlVertexAttribPointer(f.position, 2, gl.FLOAT, false, 0, 0)
 	//	gl.ErrPanic()
+
+	// ***** BACTERIA SHADERS (with own prog) ******
+	f.sprog, err = gl.CreateProgram(bactVXShader, bactFragShader)
+	if err != nil {
+		return err
+	}
+	log.Println("field: step 1")
+	gl.ErrPanic()
+	//
+	f.sposition, _ = gl.GlGetAttribLocation(f.sprog, "position")
+	gl.ErrPanic()
+	f.smvp, _ = gl.GlGetUniformLocation(f.sprog, "mvp")
+	gl.ErrPanic()
+	f.scolor, _ = gl.GlGetAttribLocation(f.sprog, "lcolor")
+	gl.ErrPanic()
+	f.soffset, _ = gl.GlGetUniformLocation(f.sprog, "offset")
+	gl.ErrPanic()
+	f.bcolor, _ = gl.GlGetUniformLocation(f.sprog, "color")
+	gl.ErrPanic()
+	gl.GlUseProgram(f.sprog)
+	log.Println("field: prog and shader inputs:", f.sprog, f.sposition, f.smvp, f.scolor, f.soffset, f.bcolor)
+	log.Println("field: step 2")
+	//
+	gl.GlEnableVertexAttribArray(f.sposition)
+	gl.ErrPanic()
+	gl.GlEnableVertexAttribArray(f.scolor)
+	gl.ErrPanic()
+	log.Println("field: step 3")
+	//	sgridBinder := func(b *gl.Buffer) error {
+	//		gl.GlBindBuffer(gl.ARRAY_BUFFER, b.GlBuffer)
+	//		gl.ErrPanic()
+	//		gl.GlVertexAttribPointer(f.sposition, 2, gl.FLOAT, false, 0, 0)
+	//		gl.ErrPanic()
+	//		gl.GlEnableVertexAttribArray(f.sposition)
+	//		gl.ErrPanic()
+	//		gl.GlUniformMatrix4fv(f.smvp, 1, false, mvp)
+	//		gl.ErrPanic()
+	//		gl.GlUseProgram(f.sprog)
+	//		gl.ErrPanic()
+	//		return nil
+	//	}
+	f.buffers[ID_BACTERIA_BODY].Binder = gl.ShaderBinder(bactBinder)
+
+	// temporary bacteria body
+	bactbuf := renderObject(mainSet[ID_BACTERIA_BODY].verts,
+		10, 10, gl.PackColor([3]byte{255, 100, 0}))
+	//bactbuf = renderObject(mainSet[ID_BACTERIA_BODY].verts, 10, 10)
+	f.buffers[ID_BACTERIA_BODY].Append(bactbuf)
+	f.buffers[ID_BACTERIA_BODY].Flush()
+	log.Println("field: bact verts", bactbuf)
+	//	gl.GlUniformMatrix4fv(f.smvp, 1, false, mvp)
 	return nil
 }
 
@@ -114,6 +187,32 @@ func (f *Field) Draw(mvp []float32) {
 
 	//f.buffers[ID_BACTERIA_BODY].Binder(f.buffers[ID_BACTERIA_BODY])
 	//gl.DrawArrays
+
+	// ********* bacterias **********
+	//	//log.Println("field: rendering grid", f.buffers[ID_MARKUP].BufLen)
+	//
+	//	// remove after debug
+
+	b = f.buffers[ID_BACTERIA_BODY]
+	gl.GlBindBuffer(gl.ARRAY_BUFFER, b.GlBuffer)
+	f.buffers[ID_BACTERIA_BODY].Binder(f.buffers[ID_BACTERIA_BODY])
+
+	//	gl.ErrPanic()
+	//	//gl.GlEnableVertexAttribArray(f.position)
+	//	gl.ErrPanic()
+	//	//gl.GlVertexAttribPointer(f.position, 2, gl.FLOAT, false, 0, 0)
+	//	gl.ErrPanic()
+	//	//gl.GlUniformMatrix4fv(f.mvp, 1, false, mvp)
+	//	//gl.ErrPanic()
+	//	//gl.GlUseProgram(f.prog)
+	//	//gl.ErrPanic()
+	//	gl.GlUniform3f(f.color, 1.0, 0.7, 0.0)
+	//	//gl.GlDrawArrays(gl.POINTS, 0, b.BufLen)
+	//	//gl.GlClear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+	gl.GlUniform3f(f.bcolor, 1.0, 1.0, 1.0)
+	gl.GlUniform2f(f.soffset, f.offx, f.offy)
+	gl.GlDrawArrays(gl.TRIANGLES, 0, b.BufLen)
 }
 
 func (f *Field) UpdateBact(cx, cy float32, angle float32, color [3]byte) {
@@ -145,13 +244,15 @@ func (f *Field) UpdateMarkup(cx, cy float32) {
 }
 
 func renderObject(pattern []float32, cx, cy float32, other ...float32) []float32 {
-	vexs := make([]float32, len(pattern)*(1+len(other)))
+	vexs := make([]float32, len(pattern)+len(pattern)/2*len(other))
 	//log.Println("render: coords are", cx, cy)
 	step := len(other) + 2
-	for idx := 0; idx < len(pattern); idx += step {
-		vexs[idx] = cx*STEP + pattern[idx]
-		vexs[idx+1] = cy*STEP + pattern[idx+1]
-		copy(vexs[idx+1:], other)
+	var pidx int
+	for idx := 0; idx < len(vexs); idx += step {
+		vexs[idx] = cx*STEP + pattern[pidx] * 5
+		vexs[idx+1] = cy*STEP + pattern[pidx+1] * 5
+		copy(vexs[idx+2:], other)
+		pidx += 2
 	}
 	//log.Println("render: resulting coord set is", vexs)
 	return vexs

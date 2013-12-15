@@ -45,8 +45,10 @@ func CreateProgram(vertShader, fragShader string) (uint, error) {
 	ErrPanic()
 
 	linkOk, _ := GlGetProgramiv(prog, LINK_STATUS)
+	ErrPanic()
 	if linkOk != TRUE {
 		log, _ := GlGetProgramInfoLog(prog)
+	ErrPanic()
 		return 0, errors.New("failed to link program: " + log)
 	}
 	return prog, nil

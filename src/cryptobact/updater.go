@@ -85,7 +85,8 @@ func (r *Updater) handleUpdate(w *engine.World) {
 			if b != nil {
 				if b.Born {
 					r.field.UpdateBact(float32(b.X), float32(b.Y), float32(b.Angle),
-						[3]byte{1, 1, 1})
+						b.GetColor())
+					log.Println("updater: color is", b.GetColor())
 					bactCount++
 				} else {
 					r.field.UpdateEgg(float32(b.X), float32(b.Y), [3]byte{1, 1, 1})

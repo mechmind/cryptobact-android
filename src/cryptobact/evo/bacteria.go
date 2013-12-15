@@ -254,8 +254,8 @@ func (b *Bacteria) GetMoveEnergy() float64 {
 	return result
 }
 
-func (b *Bacteria) GetColor() []byte {
-	return []byte{
+func (b *Bacteria) GetColor() [3]byte {
+	return [3]byte{
 		byte(255.0 * b.Chromosome.DNA.GetNormGene(0)),
 		byte(255.0 * b.Chromosome.DNA.GetNormGene(1)),
 		byte(255.0 * b.Chromosome.DNA.GetNormGene(2)),

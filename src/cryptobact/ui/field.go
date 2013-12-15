@@ -198,8 +198,7 @@ func (f *Field) FlushAll() {
 func (f *Field) UpdateBact(cx, cy float32, angle float32, color [3]byte) {
 	// update body
 	bactbuf := renderRotatedObject(mainSet[ID_BACTERIA_BODY].verts,
-		cx, cy, angle, gl.PackColor([3]byte{255, 100, 0}))
-
+		cx, cy, angle, gl.PackColor(color))
 	//bactbuf = renderObject(mainSet[ID_BACTERIA_BODY].verts, fticks, 10)
 	eyebuf := renderRotatedObject(mainSet[ID_BACTERIA_EYES].verts,
 		cx, cy, angle, gl.PackColor([3]byte{0, 0, 0}))
@@ -256,7 +255,7 @@ func renderRotatedObject(pattern []float32, cx, cy, angle float32, other ...floa
 	//log.Println("render: coords are", cx, cy)
 	step := len(other) + 2
 	var pidx int
-	angle = (angle + 90)* math.Pi / 180
+	angle = (angle + 90) * math.Pi / 180
 	sin := float32(math.Sin(float64(angle)))
 	cos := float32(math.Cos(float64(angle)))
 	for idx := 0; idx < len(vexs); idx += step {

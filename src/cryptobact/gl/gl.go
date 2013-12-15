@@ -33,7 +33,7 @@ const (
 	TRIANGLES = C.GL_TRIANGLES
 	POINTS    = C.GL_POINTS
 
-	FLOAT = C.GL_FLOAT
+	FLOAT         = C.GL_FLOAT
 	UNSIGNED_BYTE = C.GL_UNSIGNED_BYTE
 
 	VERTEX_SHADER   = C.GL_VERTEX_SHADER
@@ -46,7 +46,7 @@ func GlBindBuffer(buf uint, mode uint) error {
 }
 
 func GlBufferData(glType uint, verts []float32, glMode uint) error {
-	log.Printf("gl: loading %d vertices into %d", len(verts), glType)
+	//log.Printf("gl: loading %d vertices into %d", len(verts), glType)
 	C.glBufferData(C.GLenum(glType),
 		C.GLsizeiptr(len(verts)*int(unsafe.Sizeof(verts[0]))),
 		unsafe.Pointer(&verts[0]), C.GLenum(glMode))

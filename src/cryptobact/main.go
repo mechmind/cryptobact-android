@@ -35,7 +35,7 @@ func main() {
 	runtime.GOMAXPROCS(2)
 	g.updater = newUpdater()
 	go g.updater.fetchUpdates()
-	//go engine.Loop(g.updater)
+go engine.Loop(g.updater)
 }
 
 //func updateCurrentBuffer(verts []C.GLfloat) {
@@ -118,7 +118,7 @@ func (g *game) Init(w, h int) {
 
 	bottomRect := ui.SimpleRect{0, 0, fw, bottompad}
 
-	g.fieldScreen = ui.NewFieldScreen(g, bottomRect)
+	g.fieldScreen = ui.NewFieldScreen(g, g.updater, bottomRect)
 	g.fieldScreen.Init(w, h)
 	//g.presetScreen = newPresetScreen(float32(fw * 2), 0, bottomRect)
 	g.presetScreen = ui.NewPresetScreen(g, bottomRect)

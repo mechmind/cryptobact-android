@@ -33,7 +33,7 @@ func newUpdater() *Updater {
 
 func (r *Updater) AttachField(f *ui.Field) {
 	r.field = f
-	//r.done <- struct{}{}
+	r.done <- struct{}{}
 }
 
 func (r *Updater) Update(w *engine.World) {
@@ -95,7 +95,7 @@ func (r *Updater) handleUpdate(w *engine.World) {
 	}
 }
 
-func (r *Updater) isWorldUpdated() chan struct{} {
+func (r *Updater) IsWorldUpdated() chan struct{} {
 	select {
 	case status := <-r.updateReady:
 		return status

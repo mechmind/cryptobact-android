@@ -34,6 +34,10 @@ type Screener interface {
 	GetSize() (h, w int, step float32)
 }
 
+type Updater interface {
+	IsWorldUpdated() chan struct{}
+}
+
 type Screen struct {
 	screener Screener
 }
@@ -94,11 +98,12 @@ type FieldScreen struct {
 	Screen
 	F          *Field
 	t          touchTracker
+	u          Updater
 	bottomRect SimpleRect
 }
 
-func NewFieldScreen(sc Screener, bottomRect SimpleRect) *FieldScreen {
-	return &FieldScreen{Screen{sc}, NewField(), touchTracker{}, bottomRect}
+func NewFieldScreen(sc Screener, u Updater, bottomRect SimpleRect) *FieldScreen {
+	return &FieldScreen{Screen{sc}, NewField(), touchTracker{}, u, bottomRect}
 }
 
 func (fs *FieldScreen) Init(w, h int) {
@@ -134,17 +139,17 @@ func (fs *FieldScreen) HandleDraw() {
 	// render grid
 
 	mvp := fs.screener.GetProjectionMatrix()
-	fs.F.Draw(mvp)
 	//	gl.GlBindBuffer(gl.ARRAY_BUFFER, g.gridBufId)
 	//	gl.GlVertexAttribPointer(g.posAttr, 2, gl.FLOAT, false, 0, 0)
 	//	C.glDrawArrays(C.GL_POINTS, 0, (C.GLsizei)(len(g.verts)))
 	//	// world
-	//	if status := g.updater.isWorldUpdated(); status != nil {
-	//		// apply bb to render
-	//		//log.Println("applying new map")
-	//		g.render.SwapBB()
-	//		status <- struct{}{}
-	//	}
+	if status := fs.u.IsWorldUpdated(); status != nil {
+		// apply bb to render
+		log.Println("applying new map")
+		fs.F.FlushAll()
+		status <- struct{}{}
+	}
+	fs.F.Draw(mvp)
 	//	//log.Println("rendering map")
 	//	g.render.RenderAll()
 }

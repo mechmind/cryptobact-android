@@ -31,6 +31,9 @@ func (b *Buffer) Flush() error {
 	// upload vertice + meta to opengl
 	GlBindBuffer(ARRAY_BUFFER, b.GlBuffer)
 	ErrPanic()
+	if len(b.Buf) == 0 {
+		return nil
+	}
 	GlBufferData(ARRAY_BUFFER, b.Buf, STATIC_DRAW)
 	ErrPanic()
 	// FIXME: rebind shader attrs

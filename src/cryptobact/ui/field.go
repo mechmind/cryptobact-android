@@ -8,6 +8,8 @@ import (
 	"math"
 )
 
+var ticks int
+
 type Field struct {
 	buffers []*gl.Buffer
 
@@ -153,25 +155,6 @@ func (f *Field) Init(mvp []float32) error {
 	f.buffers[ID_BACTERIA_EYES].Binder = gl.ShaderBinder(bactBinder)
 
 	// temporary bacteria body
-	bactbuf := renderObject(mainSet[ID_BACTERIA_BODY].verts,
-		10, 10, gl.PackColor([3]byte{255, 100, 0}))
-
-	//bactbuf = renderObject(mainSet[ID_BACTERIA_BODY].verts, 10, 10)
-	eyebuf := renderObject(mainSet[ID_BACTERIA_EYES].verts,
-		10, 10, gl.PackColor([3]byte{0, 0, 255}))
-	f.buffers[ID_BACTERIA_BODY].Append(eyebuf)
-
-	eyebuf = renderObject(mainSet[ID_BACTERIA_EYE_SHINE].verts,
-		10, 10, gl.PackColor([3]byte{0, 255, 0}))
-	f.buffers[ID_BACTERIA_BODY].Append(eyebuf)
-
-	eyebuf = renderObject(mainSet[ID_BACTERIA_EYE_STARK].verts,
-		10, 10, gl.PackColor([3]byte{255, 0, 0}))
-	f.buffers[ID_BACTERIA_BODY].Append(eyebuf)
-
-	f.buffers[ID_BACTERIA_BODY].Append(bactbuf)
-
-	f.buffers[ID_BACTERIA_BODY].Flush()
 	//	gl.GlUniformMatrix4fv(f.smvp, 1, false, mvp)
 	return nil
 }
@@ -184,14 +167,6 @@ func (f *Field) Draw(mvp []float32) {
 	b := f.buffers[ID_MARKUP]
 	gl.GlBindBuffer(gl.ARRAY_BUFFER, b.GlBuffer)
 	gl.ErrPanic()
-	//gl.GlEnableVertexAttribArray(f.position)
-	gl.ErrPanic()
-	//gl.GlVertexAttribPointer(f.position, 2, gl.FLOAT, false, 0, 0)
-	gl.ErrPanic()
-	//gl.GlUniformMatrix4fv(f.mvp, 1, false, mvp)
-	//gl.ErrPanic()
-	//gl.GlUseProgram(f.prog)
-	//gl.ErrPanic()
 	gl.GlUniform3f(f.color, 1.0, 1.0, 1.0)
 	gl.GlUniform2f(f.offset, f.offx, f.offy)
 	//gl.GlDrawArrays(gl.POINTS, 0, b.BufLen)
@@ -212,22 +187,32 @@ func (f *Field) Draw(mvp []float32) {
 
 	gl.GlUniform2f(f.soffset, f.offx, f.offy)
 	gl.GlDrawArrays(gl.TRIANGLES, 0, b.BufLen)
+}
 
-	// bacteria eyes ^_^
-
-	//	b = f.buffers[ID_BACTERIA_EYES]
-	//	gl.GlBindBuffer(gl.ARRAY_BUFFER, b.GlBuffer)
-	//	f.buffers[ID_BACTERIA_EYES].Binder(f.buffers[ID_BACTERIA_EYES])
-	//
-	//	gl.GlUniform2f(f.soffset, f.offx, f.offy)
-	//	gl.GlDrawArrays(gl.TRIANGLES, 0, b.BufLen)
+func (f *Field) FlushAll() {
+	for _, buf := range f.buffers {
+		buf.Flush()
+	}
 }
 
 func (f *Field) UpdateBact(cx, cy float32, angle float32, color [3]byte) {
-	colorf := gl.PackColor(color)
 	// update body
-	data := renderObject(mainSet[ID_BACTERIA_BODY].verts, cx, cy, angle, colorf)
-	f.buffers[ID_BACTERIA_BODY].Append(data)
+	bactbuf := renderObject(mainSet[ID_BACTERIA_BODY].verts,
+		cx, cy, gl.PackColor([3]byte{255, 100, 0}))
+
+	//bactbuf = renderObject(mainSet[ID_BACTERIA_BODY].verts, fticks, 10)
+	eyebuf := renderObject(mainSet[ID_BACTERIA_EYES].verts,
+		cx, cy, gl.PackColor([3]byte{0, 0, 0}))
+	f.buffers[ID_BACTERIA_BODY].Append(eyebuf)
+
+	eyebuf = renderObject(mainSet[ID_BACTERIA_EYE_SHINE].verts,
+		cx, cy, gl.PackColor([3]byte{255, 255, 255}))
+	f.buffers[ID_BACTERIA_BODY].Append(eyebuf)
+
+	eyebuf = renderObject(mainSet[ID_BACTERIA_EYE_STARK].verts,
+		cx, cy, gl.PackColor([3]byte{0, 0, 255}))
+	f.buffers[ID_BACTERIA_BODY].Append(eyebuf)
+	f.buffers[ID_BACTERIA_BODY].Append(bactbuf)
 }
 
 func (f *Field) UpdateEgg(cx, cy float32, color [3]byte) {
@@ -257,8 +242,8 @@ func renderObject(pattern []float32, cx, cy float32, other ...float32) []float32
 	step := len(other) + 2
 	var pidx int
 	for idx := 0; idx < len(vexs); idx += step {
-		vexs[idx] = cx*STEP + pattern[pidx]*15
-		vexs[idx+1] = cy*STEP + pattern[pidx+1]*15
+		vexs[idx] = cx*STEP + pattern[pidx]*3
+		vexs[idx+1] = cy*STEP + pattern[pidx+1]*3
 		copy(vexs[idx+2:], other)
 		pidx += 2
 	}

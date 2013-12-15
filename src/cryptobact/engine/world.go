@@ -28,11 +28,19 @@ type World struct {
 	FoodTicks   int
 	FoodPerTick int
 	Tick        *big.Int
+	ActionCache []*ActionCache
+}
+
+type ActionCache struct {
+	B      *evo.Bacteria
+	Action Action
+	Ttl    int
 }
 
 func NewWorld() *World {
 	return &World{
 		Populations: make([]*evo.Population, 0),
+		ActionCache: make([]*ActionCache, 0),
 		Tick:        big.NewInt(0),
 	}
 }

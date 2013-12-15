@@ -18,7 +18,7 @@ type ActionProcrastinate struct {
 	Bact *evo.Bacteria
 }
 
-func (a ActionProcrastinate) Apply() {
+func (a *ActionProcrastinate) Apply() {
 	a.Bact.Energy -= a.Bact.GetProcrEnergy()
 }
 
@@ -28,7 +28,7 @@ type ActionMove struct {
 	Y    float64
 }
 
-func (a ActionMove) Apply() {
+func (a *ActionMove) Apply() {
 	b := a.Bact
 	alpha := b.Angle
 	xt := a.X
@@ -82,7 +82,7 @@ type ActionAttack struct {
 	Object *evo.Bacteria
 }
 
-func (a ActionAttack) Apply() {
+func (a *ActionAttack) Apply() {
 	a.Object.Energy -= a.Bact.GetDamage()
 	a.Bact.Energy += a.Bact.GetDamage() * a.Bact.Chromosome.DNA.GetNormGene(12)
 }
@@ -92,7 +92,7 @@ type ActionEat struct {
 	Object *Food
 }
 
-func (a ActionEat) Apply() {
+func (a *ActionEat) Apply() {
 	b := a.Bact
 	b.Energy += b.GetMetabolism() * a.Object.Calories
 	a.Object.Eaten = true
@@ -104,7 +104,7 @@ type ActionFuck struct {
 	P      *evo.Population
 }
 
-func (a ActionFuck) Apply() {
+func (a *ActionFuck) Apply() {
 	child := a.P.Fuck(a.Bact, a.Object)
 	child.X = (a.Object.X + a.Bact.X) / 2
 	child.Y = (a.Object.Y + a.Bact.Y) / 2
@@ -117,7 +117,7 @@ type ActionDie struct {
 	P    *evo.Population
 }
 
-func (a ActionDie) Apply() {
+func (a *ActionDie) Apply() {
 	b := a.Bact
 	a.P.Kill(b)
 }
@@ -125,7 +125,7 @@ func (a ActionDie) Apply() {
 func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 	// just die if it is the time
 	if b.TTL <= 0 || b.Energy <= 0 {
-		return ActionDie{b, p}
+		return &ActionDie{b, p}
 	}
 
 	if b.Inertia == nil {
@@ -140,7 +140,7 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 		b.Inertia.Y *= b.GetCollisionInertia()
 
 		if !b.Born {
-			return ActionMove{b,
+			return &ActionMove{b,
 				b.X + b.Inertia.X,
 				b.Y + b.Inertia.Y}
 		}
@@ -176,9 +176,9 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 		weight := b.GetGlut() / food_dist
 		max_weight = weight
 		if b.GetEatDist() >= food_dist {
-			action = ActionEat{b, n_food}
+			action = &ActionEat{b, n_food}
 		} else {
-			action = ActionMove{b, n_food.X, n_food.Y}
+			action = &ActionMove{b, n_food.X, n_food.Y}
 		}
 	}
 
@@ -188,9 +188,9 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 		if weight > max_weight {
 			max_weight = weight
 			if b.GetFuckDist() >= fellow_dist {
-				action = ActionFuck{b, n_fellow, p}
+				action = &ActionFuck{b, n_fellow, p}
 			} else {
-				action = ActionMove{b, n_fellow.X, n_fellow.Y}
+				action = &ActionMove{b, n_fellow.X, n_fellow.Y}
 			}
 		}
 	}
@@ -201,9 +201,9 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 		if weight > max_weight {
 			max_weight = weight
 			if b.GetAttackDist() >= enemy_dist {
-				action = ActionAttack{b, n_enemy}
+				action = &ActionAttack{b, n_enemy}
 			} else {
-				action = ActionMove{b, n_enemy.X, n_enemy.Y}
+				action = &ActionMove{b, n_enemy.X, n_enemy.Y}
 			}
 		}
 	}
@@ -214,12 +214,12 @@ func GetAction(p *evo.Population, b *evo.Bacteria, w *World) Action {
 		if weight > max_weight {
 			max_weight = weight
 			x, y := getRunawayPoint(b, n_acid.X, n_acid.Y)
-			action = ActionMove{b, x, y}
+			action = &ActionMove{b, x, y}
 		}
 	}
 
 	if action == nil {
-		action = ActionProcrastinate{b}
+		action = &ActionProcrastinate{b}
 	}
 
 	return action

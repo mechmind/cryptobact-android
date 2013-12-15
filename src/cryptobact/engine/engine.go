@@ -191,16 +191,20 @@ func EstimateTPS(smallTick int, startTime time.Time, TPSAvg *[]int) int {
 }
 
 func SimulatePopulation(world *World, population *evo.Population) {
-	//t := time.Now()
 	for _, bact := range population.Bacts {
-		a := GetAction(population, bact, world)
-		if a != nil {
-			a.Apply()
+		a := getCachedAction(world, bact)
+		if a == nil {
+			a = GetAction(population, bact, world)
+			if a == nil {
+				continue
+			}
+			switch a.(type) {
+			case *ActionMove:
+				cacheAction(world, bact, a)
+			}
 		}
-
-		//log.Println(a)
+		a.Apply()
 	}
-	//log.Println(time.Since(t))
 
 	world.GetOld(population)
 	world.ApplyAcid(population)
@@ -246,4 +250,34 @@ func CorrectTargetTPS(realTPS int, target int) int {
 	} else {
 		return target
 	}
+}
+
+func cacheAction(w *World, b *evo.Bacteria, a Action) {
+	// FIXME replace hardcoded ttl
+	ttl := 50
+	for _, c := range w.ActionCache {
+		if c.B == b {
+			c.Action = a
+			c.Ttl = ttl
+			return
+		}
+	}
+	action := &ActionCache{b, a, ttl}
+	w.ActionCache = append(w.ActionCache, action)
+}
+
+func getCachedAction(w *World, b *evo.Bacteria) Action {
+	for k, c := range w.ActionCache {
+		if c.B == b {
+			if c.Ttl <= 1 {
+				if k+1 >= len(w.ActionCache) {
+					w.ActionCache = w.ActionCache[:k]
+				} else {
+					w.ActionCache = append(w.ActionCache[:k], w.ActionCache[k+1:]...)
+				}
+			}
+			return c.Action
+		}
+	}
+	return nil
 }

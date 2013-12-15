@@ -58,7 +58,6 @@ func (a *ActionMove) Apply() {
 		direction = "cw"
 	}
 
-	log.Println(gamma)
 	if math.Abs(b.Angle - gamma) < b.GetRotation() {
 		b.Angle = gamma
 		return

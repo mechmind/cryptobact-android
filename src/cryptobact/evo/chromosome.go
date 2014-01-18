@@ -1,25 +1,21 @@
 package evo
 
 import (
-	"crypto/sha1"
 	"fmt"
 	"io"
-	"math/big"
 	"time"
+	"math/big"
+	"crypto/sha1"
 )
 
 var _ = time.Now
-
-type DeviceId uint
 
 type Chromosome struct {
 	CurrHash *big.Int
 	PrevHash big.Int
 	Author   uint64
 	DNA      *DNA
-	//Time time.Time
 	Nonce int
-	//Device DeviceId
 }
 
 func (c *Chromosome) Hash(nonce int) *big.Int {

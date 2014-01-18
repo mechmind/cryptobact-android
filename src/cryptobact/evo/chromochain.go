@@ -12,7 +12,7 @@ func (c *Chromochain) GetChromosomes() []*Chromosome {
 	chromos := make([]*Chromosome, 0)
 	var initial *DNA
 	if c.Initial == nil {
-		initial = NewRandDNA(64)
+		initial = NewRandDNA(64, 1)
 	} else {
 		initial = c.Initial.DNA
 	}

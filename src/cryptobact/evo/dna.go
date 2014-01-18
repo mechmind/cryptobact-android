@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"math/big"
 	"math/rand"
 	"strings"
 )
@@ -13,211 +12,112 @@ var _ = log.Println
 
 type DNA struct {
 	Length  int
-	GenePos []uint
-	Seq     *big.Int
-	genes   []uint
+	Genes []*Gene
+	SlicerSeed int
 }
 
-const GENE_SLICER_SEED = 0xDEADBEEE
 const GENE_MAX_LENGTH = 8
-const GENE_MAX_VAL = 256.0
 
 var GeneSlicer = rand.New(rand.NewSource(0))
 
 func NewEmptyDNA() *DNA {
-	return &DNA{0, make([]uint, 0), big.NewInt(0), make([]uint, 0)}
+	return &DNA{
+		Length: 0,
+		Genes: make([]*Gene, 0),
+		SlicerSeed: 0,
+	}
 }
 
-func NewRandDNA(length int) *DNA {
+func NewRandDNA(length int, slicerSeed int) *DNA {
 	dna := NewEmptyDNA()
 	dna.Length = length
-	chunk := big.NewInt(0)
-	for i := 0; i <= length; i += 64 {
-		offset := uint(math.Min(64, float64(length-i)))
-		chunk.SetInt64(rand.Int63() & (1<<offset - 1))
-		dna.Seq = dna.Seq.Or(dna.Seq, chunk.Lsh(chunk, uint(i)))
-	}
+	dna.SlicerSeed = slicerSeed
 
-	GeneSlicer.Seed(GENE_SLICER_SEED)
-	for total := 0; total <= length; {
-		gene_len := GeneSlicer.Intn(GENE_MAX_LENGTH) + 1
-		dna.GenePos = append(dna.GenePos, uint(gene_len))
-		total += gene_len
+	for i := 0; i <= length; i += 1 {
+		newGene := dna.Expand()
+		newGene.Value = uint(rand.Intn((1 << uint(newGene.Length)) - 1))
 	}
 
 	return dna
 }
 
 func Crossover(a *DNA, b *DNA) *DNA {
-	a_genes := a.genes
-	b_genes := b.genes
+	newDna := NewEmptyDNA()
 
-	new_dna := NewEmptyDNA()
-
-	if len(b_genes) > len(a_genes) {
-		a_genes, b_genes = b_genes, a_genes
-		new_dna.GenePos = b.GenePos
-		new_dna.Length = b.Length
+	if b.Length > a.Length {
+		newDna.Genes = b.Genes
+		newDna.Length = b.Length
 	} else {
-		new_dna.GenePos = a.GenePos
-		new_dna.Length = a.Length
+		newDna.Genes = a.Genes
+		newDna.Length = a.Length
 	}
 
-	new_genome := big.NewInt(0)
-	new_gene := big.NewInt(0)
-	offset := uint(0)
-	for i, gene_len := range new_dna.GenePos {
-		dominant := int64(0)
-		if i%2 == 0 {
-			dominant = int64(math.Max(float64(a_genes[i]),
-				float64(b_genes[i])))
-		} else {
-			dominant = int64(math.Min(float64(a_genes[i]),
-				float64(b_genes[i])))
+	for i, gene := range newDna.Genes {
+		// dominant gene determined above
+		choice := math.Min
+		if gene.Length%2 == 0 {
+			choice = math.Max
 		}
-		new_gene.SetInt64(int64(dominant))
-		new_gene.Lsh(new_gene, uint(offset))
-		new_genome.Or(new_genome, new_gene)
-		offset += gene_len
+
+		newDna.Genes[i] = &Gene{
+			Value: uint(choice(float64(a.Genes[i].Value), float64(
+				b.Genes[i].Value))),
+			Length: gene.Length,
+		}
 	}
 
-	new_dna.Seq = new_genome
-	new_dna.genes = new_dna.Genes()
-
-	return new_dna
+	return newDna
 }
 
 func (dna *DNA) Mutate(probability float64, rate float64) {
-	one := big.NewInt(1)
-	bit_mask := big.NewInt(0)
-	offset := uint(0)
-	for _, gene_len := range dna.GenePos {
+	for _, gene := range dna.Genes {
 		if rand.Float64() < probability {
-			bits_to_change := uint(math.Abs(math.Floor(rand.NormFloat64() * rate)))
-			bit_mask.Set(one)
-			bit_mask.Lsh(bit_mask, uint(math.Min(
-				float64(bits_to_change), float64(gene_len))))
-			bit_mask.Sub(bit_mask, one)
-			mutation := big.NewInt(rand.Int63())
-			mutation.And(mutation, bit_mask)
-			mutation.Lsh(mutation, offset)
-			dna.Seq.Xor(dna.Seq, mutation)
+			gene.Value ^= uint(math.Min(math.Abs(rand.NormFloat64() * rate),
+				float64((uint(1) << gene.Length) - 1)))
 		}
-		offset += gene_len
 	}
 }
 
 func (dna *DNA) Recombine(pattern string) {
-	for i := 0; i < dna.Length; i++ {
-		find := -1
-		pos := 0
-		for j, ch := range pattern {
-			pos = j
-			if ch == '.' {
-				continue
-			}
-
-			if ch == '1' && dna.Seq.Bit(i+j) != 1 {
-				find = 1
-				break
-			}
-
-			if ch == '0' && dna.Seq.Bit(i+j) != 0 {
-				find = 0
-				break
-			}
-		}
-
-		if find >= 0 {
-			for k := i + pos; k < dna.Length; k++ {
-				if dna.Seq.Bit(k) == uint(find) {
-					swap := dna.Seq.Bit(k - 1)
-					dna.Seq.SetBit(dna.Seq, k-1, uint(find))
-					dna.Seq.SetBit(dna.Seq, k, swap)
-					return
-				}
-			}
-		} else {
-			i += pos - 1
-		}
-	}
-}
-
-func (dna *DNA) Genes() []uint {
-	if len(dna.genes) > 0 {
-		return dna.genes
-	}
-
-	genes := make([]uint, 0)
-	genome := big.NewInt(0)
-	gene := big.NewInt(0)
-	genome.Set(dna.Seq)
-	bit_mask := big.NewInt(0)
-	one := big.NewInt(1)
-	for i := range dna.GenePos {
-		gene.Set(genome)
-		bit_mask.SetInt64(1)
-		bit_mask.Sub(bit_mask.Lsh(bit_mask, uint(dna.GenePos[i])), one)
-		gene.And(gene, bit_mask)
-		genes = append(genes, uint(gene.Uint64()))
-		genome.Rsh(genome, uint(dna.GenePos[i]))
-	}
-
-	dna.genes = genes
-
-	return genes
+	//@TODO
 }
 
 func (dna *DNA) GetNormGene(index int) float64 {
-	dna_genes := dna.Genes()
-	return float64(dna_genes[int(index)%len(dna_genes)]) / GENE_MAX_VAL
+	return float64(dna.Genes[index].Value) / ((1 << (GENE_MAX_LENGTH - 1)) - 1)
 }
 
 func (dna *DNA) MatchPatternCount(pattern string) int {
-	count := -1
-	for i := 0; i < dna.Length; i++ {
-		found := true
-		for j, ch := range pattern {
-			if ch == '.' {
-				continue
-			}
-
-			if ch == '1' && dna.Seq.Bit(i+j) != 1 {
-				found = false
-				break
-			}
-
-			if ch == '0' && dna.Seq.Bit(i+j) != 0 {
-				found = false
-				break
-			}
-		}
-
-		if found {
-			count += 1
-		}
-	}
-	return count
+	return 0 //@TODO
 }
 
-func (d *DNA) Diff(d2 *DNA) int {
-	diff := 0
-	length := int(math.Min(float64(d.Seq.BitLen()), float64(d2.Seq.BitLen())))
-	for i := 0; i < length; i++ {
-		diff += int(d.Seq.Bit(i)) ^ int(d2.Seq.Bit(i))
+func (dna *DNA) Expand() *Gene {
+	GeneSlicer.Seed(int64(dna.SlicerSeed))
+
+	dna.SlicerSeed = GeneSlicer.Int()
+
+	newGene := &Gene{
+		Value: 0,
+		Length: uint((dna.SlicerSeed % GENE_MAX_LENGTH) + 1),
 	}
 
-	diff += int(math.Abs(float64(d.Seq.BitLen() - d2.Seq.BitLen())))
-	return diff
+	dna.Genes = append(dna.Genes, newGene)
+
+	return newGene
+}
+
+func (d *DNA) NumDiff(d2 *DNA) int {
+	return 0 //@TODO
+}
+
+func (d *DNA) BitDiff(d2 *DNA) int {
+	return 0 //@TODO
 }
 
 func (dna *DNA) String() string {
-	gene_strs := make([]string, 0)
-	dna_genes := dna.Genes()
-	for i := len(dna_genes) - 1; i >= 0; i-- {
-		gene := dna_genes[i]
-		gene_strs = append(gene_strs,
-			fmt.Sprintf(fmt.Sprintf("%%0%db", dna.GenePos[i]), gene))
+	geneStrs := make([]string, 0)
+	for _, gene := range dna.Genes {
+		geneStrs = append(geneStrs,
+			fmt.Sprintf(fmt.Sprintf("%%0%db", gene.Length), gene.Value))
 	}
-	return strings.Join(gene_strs, "|")
+	return strings.Join(geneStrs, "|")
 }
